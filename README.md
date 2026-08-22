@@ -192,6 +192,14 @@ ReClaim/
 - **Learning System**: Continuous improvement from recovery outcome data
 - **Real-time Dashboards**: Interactive analytics with funnel, strategy, cohort, and incremental revenue views
 
+### Production Reliability & Observability
+- **System Health Monitoring**: Real-time health checks for database, recovery engine, orchestrator, governance, executor, measurement, and audit services
+- **Operational Metrics**: Track recovery attempts, success rates, workflows, governance decisions, revenue metrics, and action execution
+- **Error Tracking**: Centralized error and exception management with severity levels (INFO, WARNING, ERROR, CRITICAL) and context (workflow, opportunity, customer IDs)
+- **Health Dashboard**: Frontend page showing system status, service health, operational metrics, and error summary
+- **System Status API**: Quick status endpoint with summary of service health and critical errors
+- **Error Query API**: Filter and retrieve errors by severity, component, workflow, or opportunity
+
 ## API Endpoints
 
 ### Revenue Endpoints
