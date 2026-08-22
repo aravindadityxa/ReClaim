@@ -85,10 +85,10 @@ export const RecoveryAnalyticsPage: React.FC = () => {
         api.getStrategyRecommendations(selectedOpportunityType),
       ]);
 
-      setFunnel(funnelRes);
+      setFunnel(funnelRes as typeof funnel);
       setStrategies(Array.isArray(strategiesRes) ? strategiesRes : [strategiesRes]);
       setCohorts(Array.isArray(cohortsRes) ? cohortsRes : []);
-      setIncremental(incrementalRes);
+      setIncremental(incrementalRes as typeof incremental);
       setRecommendations(Array.isArray(recommendationsRes) ? recommendationsRes : []);
     } catch (error) {
       console.error('Failed to load analytics:', error);

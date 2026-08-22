@@ -1,5 +1,4 @@
 import { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import LoadingState from './LoadingState'
 
@@ -20,9 +19,16 @@ export default function ProtectedRoute({
     return <LoadingState />
   }
 
-  // Not authenticated - redirect to login
+  // Not authenticated
   if (!isAuthenticated || !currentUser) {
-    return <Navigate to="/login" replace />
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Not Authenticated</h2>
+          <p className="text-gray-600">Please log in to access this page.</p>
+        </div>
+      </div>
+    )
   }
 
   // Check permission if required

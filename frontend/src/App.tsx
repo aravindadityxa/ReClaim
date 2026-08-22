@@ -182,44 +182,4 @@ export default function App() {
       </div>
     </div>
   )
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-800">
-          {sidebarOpen && (
-            <p className="text-xs text-gray-500">
-              Intelligent Revenue Recovery Platform
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {navItems.find((item) => item.id === currentPage)?.label}
-          </h2>
-        </div>
-
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto">
-          <div className={currentPage === 'governance' ? '' : 'p-8'}>
-            {currentPage === 'dashboard' && <Dashboard />}
-            {currentPage === 'risk' && <RiskIntelligence />}
-            {currentPage === 'recovery' && <RecoveryIntelligence />}
-            {currentPage === 'control-center' && <RecoveryControlCenter />}
-            {currentPage === 'analytics' && <RecoveryAnalyticsPage />}
-            {currentPage === 'governance' && <GovernancePage />}
-            {currentPage === 'health' && <SystemHealth />}
-            {currentPage === 'opportunities' && <Opportunities />}
-            {currentPage === 'activity' && <ActivityPage />}
-            {currentPage === 'settings' && <SettingsPage />}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }

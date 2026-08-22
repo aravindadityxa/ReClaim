@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LogIn, AlertCircle, Loader } from 'lucide-react'
 import { authAPI, setAuthToken } from '../api'
 import { LoginRequest } from '../types'
 
 export default function Login() {
-  const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,7 +22,7 @@ export default function Login() {
       setAuthToken(response.access_token)
 
       // Redirect to dashboard
-      navigate('/dashboard', { replace: true })
+      window.location.href = '/dashboard'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed. Please try again.'
       setError(message)
