@@ -107,17 +107,15 @@ jobs:
       - name: Verify application startup
         run: |
           cd backend
-          timeout 10 python -m pytest --co -q || true
-          python -c "
-from database import init_db
-from config import DATABASE_URL
+          python << 'EOF'
 import os
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
-init_db()
+from database import init_db
 from main import app
 from fastapi.testclient import TestClient
+init_db()
 client = TestClient(app)
 response = client.get('/health')
-assert response.status_code == 200
+assert response.status_code == 200, f"Health check failed: {response.status_code}"
 print('Health check passed')
-          "
+EOF
