@@ -35,6 +35,10 @@ venv.bak/
 *.sqlite
 *.sqlite3
 
+# ML model artifacts (generated, not source code)
+risk_models/
+!risk_models/.gitkeep
+
 # Environment variables
 .env
 .env.local

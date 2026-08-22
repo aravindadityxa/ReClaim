@@ -4,6 +4,13 @@ import {
   RevenueOpportunity,
   RevenueOpportunityDetail,
   ActivityEvent,
+  RiskOpportunityInfo,
+  RiskSummary,
+  RiskDriver,
+  CohortRisk,
+  RiskTrendPoint,
+  RiskSpike,
+  ModelPerformance,
 } from './types'
 
 const API_BASE = '/api'
@@ -77,6 +84,32 @@ export const api = {
   activity: {
     getEvents: (limit: number = 50) =>
       fetchJSON<ActivityEvent[]>(`/revenue-activity?limit=${limit}`),
+  },
+
+  risk: {
+    getSummary: () =>
+      fetchJSON<RiskSummary>('/risk/summary'),
+
+    getQueue: (limit: number = 20) =>
+      fetchJSON<RiskOpportunityInfo[]>(`/risk/queue?limit=${limit}`),
+
+    getDrivers: () =>
+      fetchJSON<RiskDriver[]>('/risk/drivers'),
+
+    getCohortRisk: (dimension: string = 'payment_method') =>
+      fetchJSON<CohortRisk[]>(`/risk/cohort?dimension=${dimension}`),
+
+    getTrend: (days: number = 30) =>
+      fetchJSON<RiskTrendPoint[]>(`/risk/trend?days=${days}`),
+
+    detectSpikes: (days: number = 7) =>
+      fetchJSON<RiskSpike>(`/risk/spike?days=${days}`),
+
+    getOpportunityRisk: (opportunityId: string) =>
+      fetchJSON<RiskOpportunityInfo>(`/risk/opportunities/${opportunityId}`),
+
+    getModelPerformance: () =>
+      fetchJSON<ModelPerformance>('/risk/model-performance'),
   },
 }
 

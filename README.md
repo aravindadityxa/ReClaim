@@ -1,18 +1,22 @@
-# ReClaim - Revenue Command Center
+# ReClaim - Revenue Command Center + Risk Intelligence
 
-Phase 1 of ReClaim: An AI Revenue Recovery & Intelligence Platform for the Razorpay Buildathon.
+An AI Revenue Recovery & Intelligence Platform for the Razorpay Buildathon.
+
+**Phase 1:** Revenue Command Center - Comprehensive dashboard for revenue overview  
+**Phase 2:** Risk Intelligence - ML-based risk scoring and predictive analytics
 
 ## Overview
 
 ReClaim helps merchants:
 - Detect revenue at risk
 - Understand why revenue is at risk
+- Predict which opportunities are most likely to be lost (Phase 2)
 - Determine what is worth recovering
 - Execute recovery safely
 - Measure incremental revenue
 - Learn and improve
 
-This Phase 1 implementation focuses on the **Revenue Command Center** - a comprehensive dashboard for understanding revenue risk and recovery opportunities.
+This implementation includes both Phase 1 (Revenue Command Center) and Phase 2 (Risk Intelligence) - a complete platform for revenue risk detection, analysis, and recovery opportunity prioritization.
 
 ## Quick Start
 
@@ -71,32 +75,41 @@ cd frontend && npm install && npm run dev
 
 ```
 ReClaim/
-├── backend/                 # FastAPI backend
-│   ├── main.py             # FastAPI application
-│   ├── models.py           # SQLAlchemy models
-│   ├── business_logic.py   # Revenue calculations
-│   ├── database.py         # Database configuration
-│   ├── seed.py             # Deterministic seed data (130+ transactions)
-│   ├── schemas.py          # Pydantic schemas
-│   ├── config.py           # Configuration
-│   ├── requirements.txt    # Python dependencies
-│   ├── init_db.py         # Database initialization
-│   ├── test_runner.py     # Business logic tests
-│   └── .env.example        # Environment template
+├── backend/                       # FastAPI backend
+│   ├── main.py                   # FastAPI application + endpoints
+│   ├── models.py                 # SQLAlchemy models
+│   ├── business_logic.py         # Phase 1: Revenue calculations
+│   ├── risk_features.py          # Phase 2: Feature engineering (26 features)
+│   ├── risk_model.py             # Phase 2: LogisticRegression model
+│   ├── risk_analytics.py         # Phase 2: Risk calculations
+│   ├── database.py               # Database configuration
+│   ├── seed.py                   # Deterministic seed data (186 transactions)
+│   ├── schemas.py                # Pydantic schemas
+│   ├── config.py                 # Configuration
+│   ├── init_db.py                # Database initialization
+│   ├── tests.py                  # Phase 1 pytest tests
+│   ├── tests_phase2.py           # Phase 2 pytest tests
+│   ├── test_runner.py            # Phase 1 standalone test runner
+│   ├── verify_phase2.py          # Phase 2 standalone verification
+│   ├── requirements.txt          # Python dependencies
+│   ├── risk_models/              # ML model artifacts (generated)
+│   └── .env.example              # Environment template
 │
-├── frontend/               # React + Vite frontend
+├── frontend/                      # React + Vite frontend
 │   ├── src/
-│   │   ├── pages/         # Dashboard, Opportunities, Activity, Settings
-│   │   ├── components/    # Reusable UI components
-│   │   ├── App.tsx        # Main app with navigation
-│   │   ├── api.ts         # API client
-│   │   ├── types.ts       # TypeScript types
-│   │   └── index.css      # Global styles
-│   ├── package.json       # Node dependencies
-│   ├── vite.config.ts     # Vite configuration
-│   └── tailwind.config.js # Tailwind CSS configuration
+│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Settings
+│   │   ├── components/          # Reusable UI components (Badge, Cards, Queue, etc.)
+│   │   ├── App.tsx              # Main app with navigation
+│   │   ├── api.ts               # API client with risk methods
+│   │   ├── types.ts             # TypeScript types (including Phase 2)
+│   │   └── index.css            # Global styles
+│   ├── package.json             # Node dependencies
+│   ├── vite.config.ts           # Vite configuration
+│   ├── tailwind.config.js       # Tailwind CSS configuration
+│   ├── tsconfig.json            # TypeScript configuration
+│   └── index.html               # HTML template
 │
-└── README.md              # This file
+└── README.md                      # This file
 ```
 
 ## Tech Stack
@@ -106,7 +119,9 @@ ReClaim/
 - SQLAlchemy - ORM
 - Pydantic - Data validation
 - SQLite - Database
-- Pandas/NumPy - Data analysis
+- Pandas - Data analysis
+- NumPy - Numerical computing
+- scikit-learn - Machine learning (LogisticRegression for risk prediction)
 
 **Frontend:**
 - React 18 - UI library
@@ -114,32 +129,55 @@ ReClaim/
 - Tailwind CSS - Styling
 - Recharts - Charting library
 - TypeScript - Type safety
+- Lucide React - Icon library
 
 ## Features
 
-### Dashboard
+### Phase 1: Revenue Command Center
+
+#### Dashboard
 - **Key Metrics**: Total revenue, revenue at risk, estimated recoverable, recovered revenue
 - **Revenue Health**: Deterministic health score (0-100) based on payment success, risk ratio, recovery rate, and stability
 - **Revenue Trend**: 30-day chart showing successful vs failed transactions
 - **Risk Breakdown**: Pie chart and detailed breakdown by opportunity type
 - **Risk Trend**: Determination of whether revenue risk is increasing, stable, or decreasing
 
-### Revenue Opportunities
+#### Revenue Opportunities
 - **Filterable Table**: Filter by status, risk level, type, recoverability
 - **Sorting**: Sort by amount, creation date, or risk level
 - **Detail Modal**: View complete opportunity details including transaction info and timeline
 - **Badge System**: Visual indicators for status, risk, and recoverability
 
-### Revenue Activity
+#### Revenue Activity
 - **Event Timeline**: Recent revenue events with timestamps
 - **Event Types**: Opportunity creation, recovery, status changes
 - **Relative Timestamps**: Smart relative time formatting (e.g., "2h ago")
 
+### Phase 2: Risk Intelligence
+
+#### Risk Overview
+- **Risk Summary**: High-risk revenue, opportunity count, average risk score, most common risk driver
+- **Model Performance**: F1 score, precision, recall, ROC-AUC from ML model
+- **Confidence Levels**: Model confidence based on training data volume
+
+#### Risk Analytics
+- **Risk Scoring**: ML-powered loss probability (0-100) for each opportunity
+- **Risk Levels**: Automatic classification (LOW/MEDIUM/HIGH/CRITICAL)
+- **Priority Queue**: Opportunities ranked by priority (expected loss × recoverability × urgency)
+- **Risk Drivers**: Structured extraction of main risk factors (payment failure type, customer history, aging, etc.)
+
+#### Risk Trends & Detection
+- **30-Day Trends**: Risk metrics over time with trend visualization
+- **Spike Detection**: Automatic anomaly detection (20%+ unusual increase)
+- **Cohort Analysis**: Risk breakdown by payment method, failure reason, or opportunity type
+- **Recovery Prediction**: ML model predicts whether opportunity will be LOST or RECOVERED
+
 ### Settings
-- **Phase 1 Placeholder**: Clear indication of what's coming in future phases
+- **Phase 2 Placeholder**: Clear indication of what's coming in Phase 3
 
 ## API Endpoints
 
+### Phase 1: Revenue Endpoints
 ```
 GET  /health                              # Health check
 GET  /api/dashboard/revenue-summary       # Dashboard metrics
@@ -149,18 +187,37 @@ GET  /api/revenue-opportunities/{id}      # Opportunity details
 GET  /api/revenue-activity                # Revenue event timeline
 ```
 
+### Phase 2: Risk Intelligence Endpoints
+```
+GET  /api/risk/summary                    # Risk summary metrics
+GET  /api/risk/queue?limit=20             # Top opportunities by priority
+GET  /api/risk/drivers                    # Risk breakdown by driver
+GET  /api/risk/cohort?dimension=...       # Risk by cohort (payment_method|failure_reason|opportunity_type)
+GET  /api/risk/trend?days=30              # Risk trends over time
+GET  /api/risk/spike?days=7               # Spike detection
+GET  /api/risk/opportunities/{id}         # Detailed opportunity risk analysis
+GET  /api/risk/model-performance          # Model metrics and info
+```
+
 ## Database
 
 ### Models
 - **Customer**: Merchant customers
 - **Transaction**: Payment transactions (success/failure)
-- **RevenueOpportunity**: Failed transactions identified as recovery opportunities
+- **RevenueOpportunity**: Failed transactions identified as recovery opportunities with risk classification
 
 ### Seed Data
 - 15 deterministic customers
 - 186 transactions across 60 days
-- 33 revenue opportunities with realistic failure patterns
+- 33+ revenue opportunities with realistic failure patterns
 - Data is reproducible (seeded with fixed random seed)
+
+### Phase 2 Risk Classifications
+- Each opportunity is classified by:
+  - **Risk Level**: LOW, MEDIUM, HIGH, CRITICAL (based on age and transaction patterns)
+  - **Recoverability**: LOW, MEDIUM, HIGH (based on failure type)
+  - **Status**: RECOVERABLE, AT_RISK, RECOVERED, or LOST
+  - Used as training targets for ML model
 
 ## Revenue Calculations
 
@@ -182,19 +239,47 @@ Based on recoverability classification:
 
 ## Testing
 
-Run business logic validation:
+### Phase 1 Tests
+Run Phase 1 business logic validation:
 
 ```bash
 cd backend
 python test_runner.py
 ```
 
-This validates:
+Or run pytest:
+
+```bash
+pytest tests.py -v
+```
+
+Validates:
 - Data generation (15 customers, 186+ transactions)
 - Revenue calculations
 - Health score computation
 - Trend analysis
 - Risk breakdown
+
+### Phase 2 Tests
+Run Phase 2 risk intelligence verification:
+
+```bash
+cd backend
+python verify_phase2.py
+```
+
+Or run pytest:
+
+```bash
+pytest tests_phase2.py -v
+```
+
+Validates:
+- Feature engineering (26 features)
+- Model training (LogisticRegression)
+- Risk scoring and classification
+- Risk analytics (drivers, trends, cohorts)
+- API integration
 
 ## Design Principles
 
@@ -217,23 +302,36 @@ This validates:
 - Organized for future ML/intelligence layers
 - Separation between data persistence and business logic
 
-## Phase 1 Scope
+## Implementation Status
 
+### Phase 1: Revenue Command Center ✓ COMPLETE
 **Fully Implemented:**
 - Revenue risk detection and classification
 - Dashboard with key metrics and visualizations
 - Opportunity management and filtering
 - Activity timeline
-- Basic error and loading states
+- Error and loading states
+- Deterministic business logic
+
+### Phase 2: Risk Intelligence ✓ COMPLETE
+**Fully Implemented:**
+- Feature engineering (26 features from transactions/customers/opportunities)
+- ML-based loss prediction (LogisticRegression)
+- Risk scoring (0-100) and classification (LOW/MEDIUM/HIGH/CRITICAL)
+- Priority scoring (expected loss × recoverability × urgency)
+- Risk drivers extraction (structured feature inspection)
+- Risk analytics (summary, queue, drivers, trends, spike detection, cohorts)
+- Model explainability (feature importance, confidence levels)
+- Risk Intelligence frontend page with charts and queue
+- 8 new Risk API endpoints
 
 **Not Implemented (Future Phases):**
-- ML-based recovery prediction
 - Next Best Action recommendations
 - Next Best Time optimization
 - Recovery portfolio optimization
 - Automated recovery execution
 - Razorpay integration
-- Local LLM assistance
+- LLM assistance (Ollama/Qwen3)
 
 ## Environment Variables
 
@@ -276,9 +374,30 @@ FRONTEND_URL=http://localhost:5173     # Frontend URL for CORS
 - PostgreSQL for production scale
 - Redis caching for dashboard metrics
 - WebSocket for real-time updates
-- ML model serving for recovery prediction
+- Model versioning and comparison (currently keeps only latest)
+- Advanced feature engineering
 - Razorpay Test Mode integration
 - Local Ollama + Qwen3 4B for merchant copilot
+
+## Development Notes
+
+### ML Model Artifacts
+The `backend/risk_models/` directory contains generated model artifacts (pickled model, scaler, metadata). These are:
+- Generated automatically on first API request or `init_db.py` run
+- Not committed to Git (.gitignore prevents this)
+- Recreated on each fresh database initialization
+- Safe to delete locally (will be retrained on next startup)
+
+To retrain the model after changes:
+1. Delete `backend/risk_models/` directory
+2. Restart the backend or call an API endpoint
+3. Model will auto-train from current database data
+
+### Adding New Risk Features
+1. Add feature extraction to `risk_features.py` (RiskFeatureEngine class)
+2. Update `get_feature_names()` to include new feature
+3. Model will automatically retrain with new features
+4. No other changes needed - auto-detected on next training
 
 ## Support
 
@@ -286,5 +405,5 @@ For the Razorpay Buildathon, please refer to the specification in the root direc
 
 ---
 
-**Version:** 0.1.0 (Phase 1)  
-**Status:** MVP - Revenue Command Center complete
+**Version:** 0.2.0 (Phase 1 + Phase 2)  
+**Status:** MVP - Revenue Command Center + Risk Intelligence complete

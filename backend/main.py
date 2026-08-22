@@ -9,7 +9,8 @@ from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskL
 from business_logic import RevenueAnalytics
 from schemas import (
     DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
-    RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint
+    RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint,
+    RiskSummary
 )
 from config import FRONTEND_URL, BACKEND_PORT
 
@@ -177,6 +178,131 @@ def get_revenue_activity(
         events.sort(key=lambda x: x["timestamp"], reverse=True)
         
         return events[:limit]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Phase 2: Risk Intelligence APIs
+
+@app.get("/api/risk/summary", response_model=RiskSummary)
+def get_risk_summary(db: Session = Depends(get_db)):
+    """Get aggregated risk intelligence summary."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        summary = risk_analytics.get_risk_summary()
+        return summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/queue")
+def get_risk_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    """Get prioritized revenue risk queue."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        queue = risk_analytics.get_risk_queue(limit)
+        return queue
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/drivers")
+def get_risk_drivers(db: Session = Depends(get_db)):
+    """Get risk breakdown by driver."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        drivers = risk_analytics.get_risk_drivers_breakdown()
+        return drivers
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/cohort")
+def get_cohort_risk(
+    dimension: str = Query("payment_method", regex="^(payment_method|failure_reason|opportunity_type)$"),
+    db: Session = Depends(get_db)
+):
+    """Get risk breakdown by cohort."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        cohorts = risk_analytics.get_cohort_risk(dimension)
+        return cohorts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/trend")
+def get_risk_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(get_db)):
+    """Get risk trend over time."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        trend = risk_analytics.get_risk_trend(days)
+        return trend
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/spike")
+def detect_risk_spike(days: int = Query(7, ge=1, le=30), db: Session = Depends(get_db)):
+    """Detect revenue risk spikes."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        spike = risk_analytics.detect_risk_spikes(days)
+        return spike
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/opportunities/{opportunity_id}")
+def get_opportunity_risk(opportunity_id: str, db: Session = Depends(get_db)):
+    """Get risk analysis for a specific opportunity."""
+    try:
+        from risk_analytics import RiskAnalytics
+        risk_analytics = RiskAnalytics(db)
+        risk = risk_analytics.compute_opportunity_risk(opportunity_id)
+        
+        if not risk:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        return risk
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/risk/model-performance")
+def get_model_performance(db: Session = Depends(get_db)):
+    """Get risk model performance metrics."""
+    try:
+        from risk_analytics import RiskAnalytics
+        from risk_model import RiskModel
+        
+        risk_analytics = RiskAnalytics(db)
+        model = risk_analytics.risk_model
+        
+        if not model.metadata:
+            return {
+                "model_type": "LogisticRegression",
+                "model_status": "not_trained",
+                "training_timestamp": None,
+                "train_size": 0,
+                "test_size": 0,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0,
+                "roc_auc": 0,
+                "confusion_matrix": [],
+                "dataset_info": {},
+            }
+        
+        return model.metadata
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

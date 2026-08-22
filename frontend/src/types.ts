@@ -88,3 +88,86 @@ export interface ActivityEvent {
   timestamp: string
   description: string
 }
+
+// Phase 2: Risk Intelligence
+
+export interface RiskOpportunityInfo {
+  opportunity_id: string
+  risk_probability: number
+  risk_score: number
+  risk_level: string
+  expected_loss: number
+  recoverability_score: number
+  priority_score: number
+  risk_drivers: string[]
+  confidence: number
+  model_info: {
+    model_type: string
+    model_status: string
+    training_timestamp?: string
+  }
+  computed_at: string
+}
+
+export interface RiskSummary {
+  high_risk_revenue: number
+  high_risk_opportunity_count: number
+  total_expected_loss: number
+  average_risk_score: number
+  most_common_risk_driver?: string
+  critical_opportunity_count: number
+  model_performance_f1: number
+}
+
+export interface RiskDriver {
+  driver: string
+  affected_opportunities: number
+  revenue_at_risk: number
+  average_risk_score: number
+  recoverable_revenue: number
+}
+
+export interface CohortRisk {
+  cohort: string
+  opportunity_count: number
+  revenue_at_risk: number
+  average_risk_score: number
+  average_recoverability: number
+}
+
+export interface RiskTrendPoint {
+  date: string
+  opportunity_count: number
+  revenue_at_risk: number
+  average_risk_score: number
+}
+
+export interface RiskSpike {
+  spike_detected: boolean
+  magnitude: number
+  period_days: number
+  recent_opportunities: number
+  baseline_opportunities: number
+  change_percentage: number
+}
+
+export interface ModelPerformance {
+  model_type: string
+  model_status: string
+  training_timestamp?: string
+  train_size: number
+  test_size: number
+  precision: number
+  recall: number
+  f1: number
+  roc_auc: number
+  confusion_matrix: number[][]
+  dataset_info: {
+    total_samples: number
+    outcomes_available: number
+    target_distribution: {
+      LOST: number
+      RECOVERED: number
+    }
+  }
+}

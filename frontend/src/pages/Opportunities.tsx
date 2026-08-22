@@ -500,8 +500,8 @@ function OpportunityDetailModal({
                     <span className="font-semibold">Recovery Decision Intelligence</span>
                     <br />
                     <span className="text-blue-800 text-xs">
-                      Phase 1: Not available yet. Recovery recommendations and next best actions
-                      will be available in future versions.
+                      Phase 2: Risk analysis available in Risk Intelligence page. Recovery recommendations
+                      will be available in Phase 3.
                     </span>
                   </p>
                 </div>
