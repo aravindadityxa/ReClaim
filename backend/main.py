@@ -436,6 +436,213 @@ def get_recovery_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Phase 4: Agentic Recovery Engine Endpoints
+
+@app.post("/api/recovery/workflows/{opportunity_id}")
+def create_recovery_workflow(
+    opportunity_id: str,
+    db: Session = Depends(get_db)
+):
+    """Create a new recovery workflow for an opportunity."""
+    try:
+        from recovery_orchestrator import RecoveryOrchestrator
+        
+        orchestrator = RecoveryOrchestrator(db)
+        workflow, error = orchestrator.create_workflow(opportunity_id)
+        
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        
+        return {
+            "workflow_id": workflow.opportunity_id,
+            "state": workflow.current_state.value,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/recovery/workflows/{opportunity_id}/plan")
+def plan_recovery_workflow(
+    opportunity_id: str,
+    db: Session = Depends(get_db)
+):
+    """Create recovery plan for workflow."""
+    try:
+        from recovery_orchestrator import RecoveryOrchestrator
+        from audit_service import AuditTrail
+        
+        orchestrator = RecoveryOrchestrator(db)
+        audit = AuditTrail()
+        
+        workflow, error = orchestrator.plan_recovery(opportunity_id, audit=audit)
+        
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        
+        return {
+            "workflow_id": workflow.opportunity_id,
+            "state": workflow.current_state.value,
+            "plan": workflow.plan,
+            "audit_events": len(audit.get_audit_trail()),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/recovery/workflows/{opportunity_id}/validate")
+def validate_recovery_workflow(
+    opportunity_id: str,
+    db: Session = Depends(get_db)
+):
+    """Validate and ready workflow for execution."""
+    try:
+        from recovery_orchestrator import RecoveryOrchestrator
+        from audit_service import AuditTrail
+        
+        orchestrator = RecoveryOrchestrator(db)
+        audit = AuditTrail()
+        
+        workflow, error = orchestrator.validate_and_ready(opportunity_id, audit=audit)
+        
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        
+        return {
+            "workflow_id": workflow.opportunity_id,
+            "state": workflow.current_state.value,
+            "ready_for_execution": workflow.current_state.value == "READY",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/recovery/workflows/{opportunity_id}/execute")
+def execute_recovery_action(
+    opportunity_id: str,
+    is_simulation: bool = Query(True, description="Simulate execution without provider call"),
+    db: Session = Depends(get_db)
+):
+    """Execute next recovery action in workflow."""
+    try:
+        from recovery_orchestrator import RecoveryOrchestrator
+        from audit_service import AuditTrail
+        
+        orchestrator = RecoveryOrchestrator(db)
+        audit = AuditTrail()
+        
+        workflow, error = orchestrator.execute_next_action(
+            opportunity_id,
+            is_simulation=is_simulation,
+            audit=audit
+        )
+        
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        
+        return {
+            "workflow_id": workflow.opportunity_id,
+            "state": workflow.current_state.value,
+            "current_action": workflow.current_action,
+            "attempt_number": workflow.attempt_count,
+            "last_execution": workflow.executions[-1].to_dict() if workflow.executions else None,
+            "should_continue": workflow.current_state.value not in ["STOPPED", "RECOVERED"],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/workflows/{opportunity_id}")
+def get_recovery_workflow(
+    opportunity_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get recovery workflow state."""
+    try:
+        from recovery_orchestrator import RecoveryOrchestrator
+        
+        orchestrator = RecoveryOrchestrator(db)
+        workflow = orchestrator.get_workflow(opportunity_id)
+        
+        if not workflow:
+            raise HTTPException(status_code=404, detail=f"Workflow not found: {opportunity_id}")
+        
+        return workflow.to_dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/workflows/{opportunity_id}/audit")
+def get_workflow_audit_trail(
+    opportunity_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get audit trail for recovery workflow."""
+    try:
+        from audit_service import audit_store
+        
+        trail = audit_store.get_trail(opportunity_id)
+        
+        return {
+            "opportunity_id": opportunity_id,
+            "event_count": len(trail),
+            "events": trail,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/control-center")
+def get_recovery_control_center(db: Session = Depends(get_db)):
+    """Get recovery control center with active/completed workflows."""
+    try:
+        from models import RecoveryExecution, RecoveryAttempt
+        
+        # Get active workflows (not in terminal state)
+        active_workflows = db.query(RecoveryExecution).filter(
+            ~RecoveryExecution.current_state.in_(["STOPPED", "RECOVERED"])
+        ).all()
+        
+        # Get completed workflows
+        completed_workflows = db.query(RecoveryExecution).filter(
+            RecoveryExecution.current_state.in_(["STOPPED", "RECOVERED"])
+        ).all()
+        
+        # Get recent attempts
+        recent_attempts = db.query(RecoveryAttempt).order_by(
+            RecoveryAttempt.created_at.desc()
+        ).limit(50).all()
+        
+        return {
+            "active_workflows": len(active_workflows),
+            "completed_workflows": len(completed_workflows),
+            "recent_attempts_count": len(recent_attempts),
+            "total_attempts": db.query(RecoveryAttempt).count(),
+            "active_summary": [
+                {
+                    "opportunity_id": w.opportunity_id,
+                    "state": w.current_state.value if hasattr(w.current_state, 'value') else str(w.current_state),
+                    "current_action": w.current_action,
+                    "attempt_count": w.attempt_count,
+                    "started_at": w.started_at.isoformat() if w.started_at else None,
+                }
+                for w in active_workflows
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
