@@ -22,6 +22,23 @@ This is a comprehensive platform for revenue risk detection, analysis, recovery 
 - Node.js 16+ / npm
 - Git
 
+### Authentication & Security
+
+ReClaim includes a complete production security and access control engine:
+
+**Demo Credentials:**
+- Username: `admin`
+- Password: `Admin@123456`
+
+**User Roles:**
+- **ADMIN**: Full system access, user management, policy configuration, can view and execute all operations
+- **OPERATOR**: Manage recovery workflows, execute recovery actions, approve requests, view operational metrics
+- **ANALYST**: Read-only access to risk and recovery analytics, view system health and metrics
+- **VIEWER**: Read-only access to dashboards and basic system information
+
+**Default Admin User:**
+A default admin user is automatically created on first run with the credentials above. Change this password in production.
+
 ### Backend Setup
 
 ```bash
@@ -30,8 +47,9 @@ cd backend
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment file
+# Copy environment file and configure JWT secret
 copy .env.example .env
+# Edit .env and set JWT_SECRET_KEY to a strong random value
 
 # Initialize database and seed with data
 python init_db.py
@@ -41,6 +59,12 @@ python main.py
 ```
 
 The backend will be available at `http://localhost:8000`
+
+**API Authentication:**
+All protected endpoints require a JWT Bearer token in the Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
 
 ### Frontend Setup
 
@@ -56,6 +80,8 @@ npm run dev
 
 The frontend will be available at `http://localhost:5173`
 
+You will be redirected to the login page. Use the demo credentials above.
+
 ### Full Setup (One Command)
 
 ```bash
@@ -68,13 +94,134 @@ cd backend && pip install -r requirements.txt && python init_db.py && python mai
 cd frontend && npm install && npm run dev
 ```
 
+## Authentication & Authorization
+
+### API Authentication
+
+Login endpoint:
+```bash
+POST /api/auth/login
+{
+  "username": "admin",
+  "password": "Admin@123456"
+}
+
+Response:
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer",
+  "user_id": "...",
+  "username": "admin",
+  "role": "ADMIN"
+}
+```
+
+Protected endpoints:
+```bash
+GET /api/auth/me -H "Authorization: Bearer <token>"
+POST /api/auth/logout -H "Authorization: Bearer <token>"
+```
+
+### User Management (Admin Only)
+
+Create user:
+```bash
+POST /api/users -H "Authorization: Bearer <admin_token>"
+{
+  "username": "newuser",
+  "email": "user@example.com",
+  "password": "SecurePassword@123456",
+  "full_name": "New User",
+  "role": "OPERATOR"
+}
+```
+
+List users:
+```bash
+GET /api/users -H "Authorization: Bearer <admin_token>"
+```
+
+Change user role:
+```bash
+PATCH /api/users/{user_id}/role -H "Authorization: Bearer <admin_token>"
+{
+  "role": "ANALYST"
+}
+```
+
+Deactivate/activate user:
+```bash
+POST /api/users/{user_id}/deactivate -H "Authorization: Bearer <admin_token>"
+POST /api/users/{user_id}/activate -H "Authorization: Bearer <admin_token>"
+```
+
+### Permission System
+
+Users are granted permissions based on their role:
+
+**ADMIN Permissions:**
+- Full access to all resources
+- dashboard.read, opportunities.read, risk.read, recovery.read, recovery.execute, recovery.workflow_manage
+- governance.read, governance.manage, governance.approve, governance.pause_resume
+- analytics.read, system.read, system.health, system.errors.read
+- users.read, users.manage, users.deactivate, users.role_change
+- settings.read, settings.manage
+
+**OPERATOR Permissions:**
+- dashboard.read, opportunities.read, risk.read, recovery.read, recovery.execute, recovery.workflow_manage
+- governance.read, governance.approve
+- system.read, system.health, system.errors.read
+
+**ANALYST Permissions:**
+- dashboard.read, opportunities.read, risk.read, risk.summary, recovery.read
+- governance.read, analytics.read
+- system.read, system.health
+
+**VIEWER Permissions:**
+- dashboard.read, opportunities.read, risk.summary
+- system.health (limited summary only)
+
+### Security Features
+
+- **JWT Authentication**: Secure token-based authentication with 24-hour expiration
+- **Password Hashing**: bcrypt with cost=12 for secure password storage
+- **Role-Based Access Control (RBAC)**: Four-tier role hierarchy with fine-grained permissions
+- **Authorization Middleware**: Backend endpoint protection with permission checking
+- **Security Audit Trail**: All authentication and authorization events logged with severity levels
+- **Protected Routes**: Frontend routing protected with authentication context
+- **Session Storage**: Tokens stored in sessionStorage for session-level security
+- **Admin Protections**: Prevents removing last administrator or deactivating last admin
+- **Deactivated User Blocking**: Inactive users cannot authenticate
+
+### Security Configuration
+
+**Environment Variables (.env):**
+```
+JWT_SECRET_KEY=your-super-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+ACCESS_TOKEN_EXPIRES_MINUTES=1440
+```
+
+**Production Security Recommendations:**
+1. Change the default admin password immediately
+2. Set a strong JWT_SECRET_KEY (use `python -c "import secrets; print(secrets.token_urlsafe(32))"`)
+3. Use HTTPS/TLS for all API communication
+4. Enable CORS restrictions for production domains
+5. Implement rate limiting on authentication endpoints
+6. Use environment variables for all secrets (never commit .env)
+7. Regularly rotate JWT secret and user credentials
+8. Monitor security event logs for suspicious activity
+
 ## Project Structure
 
 ```
 ReClaim/
 ├── backend/                       # FastAPI backend
 │   ├── main.py                   # FastAPI application + endpoints
-│   ├── models.py                 # SQLAlchemy models
+│   ├── models.py                 # SQLAlchemy models (including User, SecurityEvent)
+│   ├── auth_service.py           # JWT, password hashing, permission management
+│   ├── auth_middleware.py        # Authorization middleware and permission mapping
 │   ├── business_logic.py         # Revenue calculations
 │   ├── risk_features.py          # Feature engineering (26 features)
 │   ├── risk_model.py             # LogisticRegression model
@@ -97,7 +244,36 @@ ReClaim/
 │   ├── init_db.py                # Database initialization
 │   ├── tests.py                  # Business logic tests
 │   ├── tests_governance.py       # Governance tests
+│   ├── test_security.py          # Security, authentication, and RBAC tests
 │   ├── requirements.txt          # Python dependencies
+├── frontend/                      # React + TypeScript frontend
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Login.tsx         # Authentication login page
+│   │   │   ├── UserManagement.tsx # User management interface (admin only)
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── Opportunities.tsx
+│   │   │   ├── RiskIntelligence.tsx
+│   │   │   ├── RecoveryIntelligence.tsx
+│   │   │   ├── RecoveryControlCenter.tsx
+│   │   │   ├── GovernancePage.tsx
+│   │   │   ├── RecoveryAnalyticsPage.tsx
+│   │   │   ├── SystemHealth.tsx
+│   │   │   ├── Activity.tsx
+│   │   │   ├── Settings.tsx
+│   │   ├── components/
+│   │   │   ├── ProtectedRoute.tsx # Route protection component
+│   │   ├── hooks/
+│   │   │   ├── useAuth.ts        # Authentication hook
+│   │   ├── context/
+│   │   │   ├── AuthContext.tsx   # Authentication context provider
+│   │   ├── api.ts                # API client with JWT support
+│   │   ├── types.ts              # TypeScript interfaces
+│   │   ├── App.tsx               # Main app with auth integration
+│   │   ├── main.tsx              # Entry point
+│   ├── package.json
+│   ├── tsconfig.json
+```
 │   ├── risk_models/              # ML model artifacts (generated)
 │   └── .env.example              # Environment template
 │

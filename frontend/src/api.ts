@@ -20,6 +20,13 @@ import {
   OperationalMetrics,
   SystemErrorResponse,
   SystemStatus,
+  LoginRequest,
+  TokenResponse,
+  UserInfo,
+  CurrentUserResponse,
+  CreateUserRequest,
+  UpdateUserRoleRequest,
+  UserListResponse,
 } from './types'
 
 const API_BASE = '/api'
@@ -31,16 +38,44 @@ export class APIError extends Error {
   }
 }
 
+// Store token in sessionStorage for the current session
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return sessionStorage.getItem('auth_token')
+  }
+  return null
+}
+
+const setAuthToken = (token: string): void => {
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('auth_token', token)
+  }
+}
+
+const clearAuthToken = (): void => {
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('auth_token')
+  }
+}
+
 async function fetchJSON<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
   try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    }
+
+    // Add authorization header if token exists
+    const token = getAuthToken()
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${API_BASE}${url}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
       ...options,
     })
 
@@ -243,3 +278,61 @@ export const api = {
   getSystemStatus: () =>
     fetchJSON<SystemStatus>('/system/status'),
 }
+
+
+// ============================================================================
+// Authentication & User Management
+// ============================================================================
+
+export const authAPI = {
+  login: (credentials: LoginRequest): Promise<TokenResponse> => {
+    return fetchJSON<TokenResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    })
+  },
+
+  logout: (): Promise<{ detail: string }> => {
+    return fetchJSON<{ detail: string }>('/auth/logout', {
+      method: 'POST',
+    })
+  },
+
+  getCurrentUser: (): Promise<CurrentUserResponse> => {
+    return fetchJSON<CurrentUserResponse>('/auth/me')
+  },
+
+  // User management (admin only)
+  listUsers: (): Promise<UserListResponse> => {
+    return fetchJSON<UserListResponse>('/users')
+  },
+
+  createUser: (userData: CreateUserRequest): Promise<UserInfo> => {
+    return fetchJSON<UserInfo>('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
+  },
+
+  updateUserRole: (userId: string, roleUpdate: UpdateUserRoleRequest): Promise<UserInfo> => {
+    return fetchJSON<UserInfo>(`/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify(roleUpdate),
+    })
+  },
+
+  deactivateUser: (userId: string): Promise<UserInfo> => {
+    return fetchJSON<UserInfo>(`/users/${userId}/deactivate`, {
+      method: 'POST',
+    })
+  },
+
+  activateUser: (userId: string): Promise<UserInfo> => {
+    return fetchJSON<UserInfo>(`/users/${userId}/activate`, {
+      method: 'POST',
+    })
+  },
+}
+
+// Export token management for use in auth context
+export { getAuthToken, setAuthToken, clearAuthToken }

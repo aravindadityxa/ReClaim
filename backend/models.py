@@ -251,3 +251,53 @@ class PolicyChangeLog(Base):
     reason = Column(String, nullable=True)
     created_at = Column(DateTime, index=True, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Production Security & Access Control
+
+class UserRole(str, enum.Enum):
+    """User role for access control."""
+    ADMIN = "ADMIN"
+    OPERATOR = "OPERATOR"
+    ANALYST = "ANALYST"
+    VIEWER = "VIEWER"
+
+
+class User(Base):
+    """User account for authentication and authorization."""
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)  # bcrypt hash, never plaintext
+    full_name = Column(String, nullable=True)
+    role = Column(Enum(UserRole), index=True, default=UserRole.VIEWER)
+    is_active = Column(Integer, default=1)  # SQLite uses 0/1 instead of boolean
+    created_at = Column(DateTime, index=True, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+
+    # Relationships
+    security_events = relationship("SecurityEvent", back_populates="user")
+
+
+class SecurityEvent(Base):
+    """Audit trail for security-related events (login, logout, role changes, etc)."""
+    __tablename__ = "security_events"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    event_type = Column(String, index=True)  # LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, USER_CREATED, etc
+    severity = Column(String)  # INFO, WARNING, ERROR
+    resource = Column(String, nullable=True)  # what resource was accessed/modified
+    action = Column(String, nullable=True)  # create, read, update, delete, execute
+    result = Column(String, nullable=True)  # ALLOWED, DENIED, FAILED
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    details = Column(String, nullable=True)  # JSON string with additional context
+    created_at = Column(DateTime, index=True, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="security_events")

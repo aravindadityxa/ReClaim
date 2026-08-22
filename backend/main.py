@@ -1,19 +1,25 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 
 from database import get_db, init_db
-from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability
+from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability, User, UserRole
 from business_logic import RevenueAnalytics
 from schemas import (
     DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
     RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint,
     RiskSummary, RecoveryRecommendationSchema, RecoveryActionComparisonSchema,
-    RecoveryPortfolioMetricsSchema, RecoveryDashboardMetricsSchema
+    RecoveryPortfolioMetricsSchema, RecoveryDashboardMetricsSchema,
+    LoginRequest, TokenResponse, UserResponse, CurrentUserResponse,
+    CreateUserRequest, UpdateUserRoleRequest, UserListResponse, SecurityEventResponse
 )
 from config import FRONTEND_URL, BACKEND_PORT
+from auth_service import (
+    authenticate_user, create_user, verify_token, get_user_by_id,
+    get_user_permissions, has_permission, log_security_event
+)
 
 app = FastAPI(title="ReClaim Revenue Command Center")
 
@@ -27,16 +33,441 @@ app.add_middleware(
 )
 
 
+# ============================================================================
+# Authentication & Authorization Helpers
+# ============================================================================
+
+async def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """
+    Dependency that extracts and validates the JWT token from request headers.
+    Returns the current authenticated user or raises 401.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+
+    token = auth_header[7:]  # Remove "Bearer " prefix
+    token_payload = verify_token(token)
+
+    if not token_payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user = get_user_by_id(db, token_payload.user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+
+    return user
+
+
+def require_permission(permission: str):
+    """
+    Dependency factory that checks if the current user has a specific permission.
+    Usage: @app.get("/some-endpoint", dependencies=[Depends(require_permission("resource.action"))])
+    """
+    async def check_permission(current_user: User = Depends(get_current_user)):
+        if not has_permission(current_user, permission):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+
+    return check_permission
+
+
 @app.on_event("startup")
 def startup():
-    """Initialize database on startup."""
+    """Initialize database on startup and create default users/roles."""
     init_db()
+    
+    # Create default admin user if it doesn't exist
+    db = SessionLocal()
+    try:
+        admin = get_user_by_username(db, "admin")
+        if not admin:
+            create_user(
+                db,
+                username="admin",
+                email="admin@reclaim.local",
+                password="Admin@123456",  # Should be changed in production
+                full_name="System Administrator",
+                role=UserRole.ADMIN,
+            )
+    except Exception as e:
+        print(f"Error creating default admin user: {e}")
+    finally:
+        db.close()
+
+
+from auth_service import get_user_by_username
+from database import SessionLocal
 
 
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+# ============================================================================
+# Authentication Endpoints
+# ============================================================================
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Login endpoint. Returns JWT token on successful authentication.
+    POST /api/auth/login with { "username": "...", "password": "..." }
+    """
+    user = authenticate_user(db, request.username, request.password)
+
+    if not user:
+        # Log failed login attempt
+        log_security_event(
+            db,
+            event_type="LOGIN_FAILURE",
+            severity="WARNING",
+            action="login",
+            result="DENIED",
+            details={"username": request.username},
+        )
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.commit()
+
+    # Log successful login
+    log_security_event(
+        db,
+        event_type="LOGIN_SUCCESS",
+        severity="INFO",
+        user_id=user.id,
+        resource="authentication",
+        action="login",
+        result="ALLOWED",
+    )
+
+    token = create_access_token(user)
+    permissions = get_user_permissions(user)
+
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user_id=user.id,
+        username=user.username,
+        role=user.role.value,
+    )
+
+
+@app.post("/api/auth/logout")
+def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Logout endpoint. Logs the user out (client removes token).
+    """
+    log_security_event(
+        db,
+        event_type="LOGOUT",
+        severity="INFO",
+        user_id=current_user.id,
+        resource="authentication",
+        action="logout",
+        result="ALLOWED",
+    )
+    return {"detail": "Logged out successfully"}
+
+
+@app.get("/api/auth/me", response_model=CurrentUserResponse)
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """
+    Get current user information and permissions.
+    Requires valid JWT token.
+    """
+    permissions = list(get_user_permissions(current_user))
+    return CurrentUserResponse(
+        user_id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        role=current_user.role.value,
+        permissions=permissions,
+        is_active=bool(current_user.is_active),
+    )
+
+
+# ============================================================================
+# User Management Endpoints (Admin only)
+# ============================================================================
+
+@app.get("/api/users", response_model=UserListResponse, dependencies=[Depends(require_permission("users.read"))])
+def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    List all users. Requires users.read permission (Admin only).
+    """
+    users = db.query(User).all()
+    user_responses = [
+        UserResponse(
+            id=u.id,
+            username=u.username,
+            email=u.email,
+            full_name=u.full_name,
+            role=u.role.value,
+            is_active=bool(u.is_active),
+            created_at=u.created_at,
+            last_login=u.last_login,
+        )
+        for u in users
+    ]
+
+    log_security_event(
+        db,
+        event_type="USER_LIST_ACCESSED",
+        severity="INFO",
+        user_id=current_user.id,
+        resource="users",
+        action="read",
+        result="ALLOWED",
+    )
+
+    return UserListResponse(users=user_responses, total=len(users))
+
+
+@app.post("/api/users", response_model=UserResponse, dependencies=[Depends(require_permission("users.manage"))])
+def create_new_user(
+    request: CreateUserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a new user. Requires users.manage permission (Admin only).
+    """
+    # Validate role
+    try:
+        role = UserRole[request.role.upper()]
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {request.role}")
+
+    # Check if user already exists
+    existing = db.query(User).filter(User.username == request.username).first()
+    if existing:
+        log_security_event(
+            db,
+            event_type="USER_CREATE_FAILED",
+            severity="WARNING",
+            user_id=current_user.id,
+            resource="users",
+            action="create",
+            result="DENIED",
+            details={"reason": "user already exists", "username": request.username},
+        )
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    existing_email = db.query(User).filter(User.email == request.email).first()
+    if existing_email:
+        log_security_event(
+            db,
+            event_type="USER_CREATE_FAILED",
+            severity="WARNING",
+            user_id=current_user.id,
+            resource="users",
+            action="create",
+            result="DENIED",
+            details={"reason": "email already exists", "email": request.email},
+        )
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    try:
+        new_user = create_user(
+            db,
+            username=request.username,
+            email=request.email,
+            password=request.password,
+            full_name=request.full_name,
+            role=role,
+            created_by_user_id=current_user.id,
+        )
+
+        log_security_event(
+            db,
+            event_type="USER_CREATED",
+            severity="INFO",
+            user_id=current_user.id,
+            resource="users",
+            action="create",
+            result="ALLOWED",
+            details={"created_user_id": new_user.id, "username": new_user.username, "role": role.value},
+        )
+
+        return UserResponse(
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
+            full_name=new_user.full_name,
+            role=new_user.role.value,
+            is_active=bool(new_user.is_active),
+            created_at=new_user.created_at,
+            last_login=new_user.last_login,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.patch("/api/users/{user_id}/role", response_model=UserResponse, dependencies=[Depends(require_permission("users.role_change"))])
+def change_user_role(
+    user_id: str,
+    request: UpdateUserRoleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Change a user's role. Requires users.role_change permission (Admin only).
+    Prevents removing the last Admin.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Validate new role
+    try:
+        new_role = UserRole[request.role.upper()]
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {request.role}")
+
+    # Prevent removing the last admin
+    if user.role == UserRole.ADMIN and new_role != UserRole.ADMIN:
+        admin_count = db.query(User).filter(User.role == UserRole.ADMIN, User.is_active == 1).count()
+        if admin_count <= 1:
+            log_security_event(
+                db,
+                event_type="USER_ROLE_CHANGE_FAILED",
+                severity="WARNING",
+                user_id=current_user.id,
+                resource="users",
+                action="role_change",
+                result="DENIED",
+                details={"reason": "cannot remove last admin", "target_user_id": user_id},
+            )
+            raise HTTPException(status_code=400, detail="Cannot remove the last administrator")
+
+    old_role = user.role.value
+    user.role = new_role
+    db.commit()
+    db.refresh(user)
+
+    log_security_event(
+        db,
+        event_type="USER_ROLE_CHANGED",
+        severity="INFO",
+        user_id=current_user.id,
+        resource="users",
+        action="role_change",
+        result="ALLOWED",
+        details={"target_user_id": user_id, "old_role": old_role, "new_role": new_role},
+    )
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role.value,
+        is_active=bool(user.is_active),
+        created_at=user.created_at,
+        last_login=user.last_login,
+    )
+
+
+@app.post("/api/users/{user_id}/deactivate", response_model=UserResponse, dependencies=[Depends(require_permission("users.deactivate"))])
+def deactivate_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Deactivate a user account. Requires users.deactivate permission (Admin only).
+    Prevents deactivating the last Admin.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prevent deactivating the last admin
+    if user.role == UserRole.ADMIN and user.is_active:
+        admin_count = db.query(User).filter(User.role == UserRole.ADMIN, User.is_active == 1).count()
+        if admin_count <= 1:
+            log_security_event(
+                db,
+                event_type="USER_DEACTIVATE_FAILED",
+                severity="WARNING",
+                user_id=current_user.id,
+                resource="users",
+                action="deactivate",
+                result="DENIED",
+                details={"reason": "cannot deactivate last admin", "target_user_id": user_id},
+            )
+            raise HTTPException(status_code=400, detail="Cannot deactivate the last administrator")
+
+    user.is_active = 0
+    db.commit()
+    db.refresh(user)
+
+    log_security_event(
+        db,
+        event_type="USER_DEACTIVATED",
+        severity="INFO",
+        user_id=current_user.id,
+        resource="users",
+        action="deactivate",
+        result="ALLOWED",
+        details={"target_user_id": user_id},
+    )
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role.value,
+        is_active=bool(user.is_active),
+        created_at=user.created_at,
+        last_login=user.last_login,
+    )
+
+
+@app.post("/api/users/{user_id}/activate", response_model=UserResponse, dependencies=[Depends(require_permission("users.deactivate"))])
+def activate_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Reactivate a user account. Requires users.deactivate permission (Admin only).
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = 1
+    db.commit()
+    db.refresh(user)
+
+    log_security_event(
+        db,
+        event_type="USER_ACTIVATED",
+        severity="INFO",
+        user_id=current_user.id,
+        resource="users",
+        action="activate",
+        result="ALLOWED",
+        details={"target_user_id": user_id},
+    )
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role.value,
+        is_active=bool(user.is_active),
+        created_at=user.created_at,
+        last_login=user.last_login,
+    )
 
 
 @app.get("/api/dashboard/revenue-summary", response_model=DashboardSummary)

@@ -349,3 +349,66 @@ export interface SystemStatus {
     critical_errors: number
   }
 }
+
+
+// Production Security & Access Control
+
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+  user_id: string
+  username: string
+  role: string
+}
+
+export interface UserInfo {
+  id: string
+  username: string
+  email: string
+  full_name?: string
+  role: string
+  is_active: boolean
+  created_at: string
+  last_login?: string
+}
+
+export interface CurrentUserResponse {
+  user_id: string
+  username: string
+  email: string
+  role: string
+  permissions: string[]
+  is_active: boolean
+}
+
+export interface CreateUserRequest {
+  username: string
+  email: string
+  password: string
+  full_name?: string
+  role?: string
+}
+
+export interface UpdateUserRoleRequest {
+  role: string
+}
+
+export interface UserListResponse {
+  users: UserInfo[]
+  total: number
+}
+
+export interface AuthContextType {
+  isAuthenticated: boolean
+  currentUser: CurrentUserResponse | null
+  token: string | null
+  login: (username: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  loading: boolean
+  error: string | null
+}

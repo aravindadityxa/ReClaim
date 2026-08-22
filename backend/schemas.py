@@ -434,3 +434,82 @@ class PolicyUpdateSchema(BaseModel):
     policy_type: str
     value: Any
     reason: Optional[str] = None
+
+
+# Production Security & Access Control
+
+class LoginRequest(BaseModel):
+    """Login request with username and password."""
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    """Authentication token response."""
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    username: str
+    role: str
+
+
+class UserResponse(BaseModel):
+    """User information response."""
+    id: str
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    role: str
+    is_active: bool
+    created_at: datetime
+    last_login: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CurrentUserResponse(BaseModel):
+    """Current authenticated user with permissions."""
+    user_id: str
+    username: str
+    email: str
+    role: str
+    permissions: list[str]
+    is_active: bool
+
+
+class CreateUserRequest(BaseModel):
+    """Request to create a new user."""
+    username: str
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    role: str = "VIEWER"
+
+
+class UpdateUserRoleRequest(BaseModel):
+    """Request to update user role."""
+    role: str
+
+
+class UserListResponse(BaseModel):
+    """List of users."""
+    users: list[UserResponse]
+    total: int
+
+
+class SecurityEventResponse(BaseModel):
+    """Security event log entry."""
+    id: str
+    user_id: Optional[str] = None
+    event_type: str
+    severity: str
+    resource: Optional[str] = None
+    action: Optional[str] = None
+    result: Optional[str] = None
+    ip_address: Optional[str] = None
+    details: Optional[dict] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
