@@ -1,0 +1,186 @@
+from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from typing import Optional
+from datetime import datetime
+
+from database import get_db, init_db
+from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability
+from business_logic import RevenueAnalytics
+from schemas import (
+    DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
+    RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint
+)
+from config import FRONTEND_URL, BACKEND_PORT
+
+app = FastAPI(title="ReClaim Revenue Command Center")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def startup():
+    """Initialize database on startup."""
+    init_db()
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
+
+@app.get("/api/dashboard/revenue-summary", response_model=DashboardSummary)
+def get_revenue_summary(db: Session = Depends(get_db)):
+    """Get dashboard revenue summary metrics."""
+    try:
+        total = RevenueAnalytics.get_total_revenue(db)
+        at_risk = RevenueAnalytics.get_revenue_at_risk(db)
+        recoverable = RevenueAnalytics.get_estimated_recoverable(db)
+        recovered = RevenueAnalytics.get_recovered_revenue(db)
+        counts = RevenueAnalytics.get_opportunity_count(db)
+        health = RevenueAnalytics.get_revenue_health(db)
+        success_rate = RevenueAnalytics.get_payment_success_rate(db)
+        
+        return DashboardSummary(
+            total_revenue=total,
+            revenue_at_risk=at_risk,
+            estimated_recoverable=recoverable,
+            recovered_revenue=recovered,
+            opportunity_count=counts,
+            health=health,
+            payment_success_rate=success_rate
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dashboard/revenue-trend", response_model=DashboardTrend)
+def get_revenue_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(get_db)):
+    """Get revenue trend for dashboard."""
+    try:
+        trend = RevenueAnalytics.get_revenue_trend(db, days)
+        risk_breakdown = RevenueAnalytics.get_risk_breakdown(db)
+        risk_trend = RevenueAnalytics.get_risk_trend(db, days)
+        
+        trend_points = [RevenueTrendPoint(**point) for point in trend]
+        
+        return DashboardTrend(
+            trend=trend_points,
+            risk_breakdown=RiskBreakdown(**risk_breakdown),
+            risk_trend=risk_trend
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/revenue-opportunities", response_model=list[RevenueOpportunityResponse])
+def get_revenue_opportunities(
+    status: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None),
+    opp_type: Optional[str] = Query(None),
+    recoverability: Optional[str] = Query(None),
+    sort_by: str = Query("created_at", regex="^(created_at|amount|risk_level)$"),
+    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    db: Session = Depends(get_db)
+):
+    """Get revenue opportunities with filtering and sorting."""
+    try:
+        query = db.query(RevenueOpportunity)
+        
+        # Apply filters
+        if status:
+            query = query.filter(RevenueOpportunity.status == status)
+        if risk_level:
+            query = query.filter(RevenueOpportunity.risk_level == risk_level)
+        if opp_type:
+            query = query.filter(RevenueOpportunity.type == opp_type)
+        if recoverability:
+            query = query.filter(RevenueOpportunity.recoverability == recoverability)
+        
+        # Apply sorting
+        sort_column = getattr(RevenueOpportunity, sort_by)
+        if sort_order == "asc":
+            query = query.order_by(sort_column.asc())
+        else:
+            query = query.order_by(sort_column.desc())
+        
+        opportunities = query.all()
+        return opportunities
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/revenue-opportunities/{opportunity_id}", response_model=RevenueOpportunityDetail)
+def get_opportunity_detail(opportunity_id: str, db: Session = Depends(get_db)):
+    """Get detailed information about a specific revenue opportunity."""
+    try:
+        opp = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.id == opportunity_id
+        ).first()
+        
+        if not opp:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        return opp
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/revenue-activity")
+def get_revenue_activity(
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Get recent revenue activity timeline."""
+    try:
+        # Get recent opportunities ordered by creation
+        opportunities = db.query(RevenueOpportunity).order_by(
+            RevenueOpportunity.created_at.desc()
+        ).limit(limit).all()
+        
+        events = []
+        for opp in opportunities:
+            events.append({
+                "id": opp.id,
+                "type": "opportunity_created",
+                "opportunity_id": opp.id,
+                "customer_id": opp.customer_id,
+                "amount": opp.amount,
+                "opportunity_type": opp.type.value,
+                "status": opp.status.value,
+                "timestamp": opp.created_at.isoformat(),
+                "description": f"{opp.type.value}: ${opp.amount} - {opp.status.value}"
+            })
+            
+            if opp.recovered_at:
+                events.append({
+                    "id": f"{opp.id}_recovered",
+                    "type": "opportunity_recovered",
+                    "opportunity_id": opp.id,
+                    "customer_id": opp.customer_id,
+                    "amount": opp.amount,
+                    "timestamp": opp.recovered_at.isoformat(),
+                    "description": f"Recovered: ${opp.amount}"
+                })
+        
+        # Sort by timestamp
+        events.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return events[:limit]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
