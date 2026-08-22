@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Play, AlertCircle, CheckCircle, Clock, Zap, Shield, PauseCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, Zap, PauseCircle } from 'lucide-react'
 import { api, APIError } from '../api'
 import { GovernanceStatus } from '../types'
 import LoadingState from '../components/LoadingState'
