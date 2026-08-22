@@ -19,7 +19,7 @@ import {
 
 const API_BASE = '/api'
 
-class APIError extends Error {
+export class APIError extends Error {
   constructor(public status: number, message: string) {
     super(message)
     this.name = 'APIError'

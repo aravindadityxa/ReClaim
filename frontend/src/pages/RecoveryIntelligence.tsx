@@ -248,7 +248,7 @@ export default function RecoveryIntelligence() {
       {/* Recovery Metrics Footer */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-900">
-          <span className="font-semibold">Recovery Intelligence:</span> Phase 3 recommends the Next Best Action
+          <span className="font-semibold">Recovery Intelligence:</span> Recommends the Next Best Action
           and Next Best Time for each revenue opportunity based on expected value, customer friction, and
           opportunity characteristics. Actions are ranked by their potential to recover revenue while minimizing
           customer friction.

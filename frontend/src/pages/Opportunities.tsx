@@ -525,7 +525,7 @@ function OpportunityDetailModal({
 
                 {/* Recovery Intelligence Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Phase 3: Recovery Intelligence</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Recovery Intelligence</h3>
                   
                   {loadingRecovery && (
                     <div className="text-center py-8">

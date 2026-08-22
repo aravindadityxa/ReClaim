@@ -193,10 +193,10 @@ export default function RecoveryControlCenter() {
         )}
       </div>
 
-      {/* Phase 4 Information */}
+      {/* Recovery Control Information */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-900">
-          <span className="font-semibold">Phase 4 - Agentic Recovery Engine:</span> This control center tracks
+          <span className="font-semibold">Recovery Control Center:</span> This control center tracks
           recovery workflows in action. Each workflow represents a bounded autonomous recovery attempt for a revenue
           opportunity. Workflows are executed in TEST MODE ONLY and follow strict safety rules including maximum
           attempts, customer contact limits, and automatic stopping rules.
