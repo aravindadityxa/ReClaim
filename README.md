@@ -1,22 +1,19 @@
-# ReClaim - Revenue Command Center + Risk Intelligence
+# ReClaim - Intelligent Revenue Recovery & Intelligence Platform
 
-An AI Revenue Recovery & Intelligence Platform for the Razorpay Buildathon.
-
-**Phase 1:** Revenue Command Center - Comprehensive dashboard for revenue overview  
-**Phase 2:** Risk Intelligence - ML-based risk scoring and predictive analytics
+An AI-powered Revenue Recovery & Intelligence Platform for the Razorpay Buildathon.
 
 ## Overview
 
 ReClaim helps merchants:
-- Detect revenue at risk
-- Understand why revenue is at risk
-- Predict which opportunities are most likely to be lost (Phase 2)
-- Determine what is worth recovering
-- Execute recovery safely
-- Measure incremental revenue
-- Learn and improve
+- Detect revenue at risk with ML-powered risk scoring
+- Understand why revenue is at risk with feature analysis
+- Predict recovery outcomes with decision intelligence
+- Execute recovery safely with governance controls
+- Manage autonomous recovery workflows with human oversight
+- Measure and learn from recovery outcomes
+- Configure policies and approval workflows
 
-This implementation includes both Phase 1 (Revenue Command Center) and Phase 2 (Risk Intelligence) - a complete platform for revenue risk detection, analysis, and recovery opportunity prioritization.
+This is a comprehensive platform for revenue risk detection, analysis, recovery recommendation, and safe autonomous recovery execution with full governance controls.
 
 ## Quick Start
 
@@ -78,30 +75,38 @@ ReClaim/
 ├── backend/                       # FastAPI backend
 │   ├── main.py                   # FastAPI application + endpoints
 │   ├── models.py                 # SQLAlchemy models
-│   ├── business_logic.py         # Phase 1: Revenue calculations
-│   ├── risk_features.py          # Phase 2: Feature engineering (26 features)
-│   ├── risk_model.py             # Phase 2: LogisticRegression model
-│   ├── risk_analytics.py         # Phase 2: Risk calculations
+│   ├── business_logic.py         # Revenue calculations
+│   ├── risk_features.py          # Feature engineering (26 features)
+│   ├── risk_model.py             # LogisticRegression model
+│   ├── risk_analytics.py         # Risk calculations
+│   ├── recovery_strategies.py    # Recovery action definitions
+│   ├── recovery_engine.py        # Recovery recommendations
+│   ├── recovery_timing.py        # Next best time optimization
+│   ├── recovery_orchestrator.py  # Agent planner for workflows
+│   ├── action_executor.py        # Safe action execution
+│   ├── policy_guard.py           # Safety validation
+│   ├── governance_service.py     # Policy enforcement engine
+│   ├── policy_rules.py           # Policy definitions
+│   ├── approval_service.py       # Approval workflow management
+│   ├── audit_service.py          # Audit trail logging
 │   ├── database.py               # Database configuration
-│   ├── seed.py                   # Deterministic seed data (186 transactions)
+│   ├── seed.py                   # Seed data generation
 │   ├── schemas.py                # Pydantic schemas
 │   ├── config.py                 # Configuration
 │   ├── init_db.py                # Database initialization
-│   ├── tests.py                  # Phase 1 pytest tests
-│   ├── tests_phase2.py           # Phase 2 pytest tests
-│   ├── test_runner.py            # Phase 1 standalone test runner
-│   ├── verify_phase2.py          # Phase 2 standalone verification
+│   ├── tests.py                  # Business logic tests
+│   ├── tests_governance.py       # Governance tests
 │   ├── requirements.txt          # Python dependencies
 │   ├── risk_models/              # ML model artifacts (generated)
 │   └── .env.example              # Environment template
 │
 ├── frontend/                      # React + Vite frontend
 │   ├── src/
-│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Settings
+│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety
 │   │   ├── components/          # Reusable UI components (Badge, Cards, Queue, etc.)
 │   │   ├── App.tsx              # Main app with navigation
-│   │   ├── api.ts               # API client with risk methods
-│   │   ├── types.ts             # TypeScript types (including Phase 2)
+│   │   ├── api.ts               # API client
+│   │   ├── types.ts             # TypeScript types
 │   │   └── index.css            # Global styles
 │   ├── package.json             # Node dependencies
 │   ├── vite.config.ts           # Vite configuration
@@ -133,70 +138,102 @@ ReClaim/
 
 ## Features
 
-### Phase 1: Revenue Command Center
-
-#### Dashboard
+### Revenue Command Center
 - **Key Metrics**: Total revenue, revenue at risk, estimated recoverable, recovered revenue
-- **Revenue Health**: Deterministic health score (0-100) based on payment success, risk ratio, recovery rate, and stability
-- **Revenue Trend**: 30-day chart showing successful vs failed transactions
-- **Risk Breakdown**: Pie chart and detailed breakdown by opportunity type
-- **Risk Trend**: Determination of whether revenue risk is increasing, stable, or decreasing
+- **Revenue Health**: Health score based on payment success, risk ratio, recovery rate
+- **Revenue Trends**: 30-day chart showing successful vs failed transactions
+- **Risk Breakdown**: Breakdown by opportunity type
+- **Revenue Opportunities**: Filterable table with status, risk, recoverability
+- **Activity Timeline**: Recent revenue events with timestamps
 
-#### Revenue Opportunities
-- **Filterable Table**: Filter by status, risk level, type, recoverability
-- **Sorting**: Sort by amount, creation date, or risk level
-- **Detail Modal**: View complete opportunity details including transaction info and timeline
-- **Badge System**: Visual indicators for status, risk, and recoverability
-
-#### Revenue Activity
-- **Event Timeline**: Recent revenue events with timestamps
-- **Event Types**: Opportunity creation, recovery, status changes
-- **Relative Timestamps**: Smart relative time formatting (e.g., "2h ago")
-
-### Phase 2: Risk Intelligence
-
-#### Risk Overview
-- **Risk Summary**: High-risk revenue, opportunity count, average risk score, most common risk driver
-- **Model Performance**: F1 score, precision, recall, ROC-AUC from ML model
-- **Confidence Levels**: Model confidence based on training data volume
-
-#### Risk Analytics
+### Risk Intelligence
 - **Risk Scoring**: ML-powered loss probability (0-100) for each opportunity
 - **Risk Levels**: Automatic classification (LOW/MEDIUM/HIGH/CRITICAL)
-- **Priority Queue**: Opportunities ranked by priority (expected loss × recoverability × urgency)
-- **Risk Drivers**: Structured extraction of main risk factors (payment failure type, customer history, aging, etc.)
+- **Priority Queue**: Opportunities ranked by priority
+- **Risk Drivers**: Extraction of main risk factors
+- **Trends & Detection**: 30-day trends with spike detection
+- **Cohort Analysis**: Risk breakdown by payment method, failure reason
+- **Model Performance**: F1 score, precision, recall, ROC-AUC
 
-#### Risk Trends & Detection
-- **30-Day Trends**: Risk metrics over time with trend visualization
-- **Spike Detection**: Automatic anomaly detection (20%+ unusual increase)
-- **Cohort Analysis**: Risk breakdown by payment method, failure reason, or opportunity type
-- **Recovery Prediction**: ML model predicts whether opportunity will be LOST or RECOVERED
+### Recovery Intelligence
+- **Recovery Recommendations**: ML-based next best action selection
+- **Recovery Actions**: Payment retry, payment link, customer reminder, subscription retry, invoice reminder
+- **Next Best Time**: Optimal timing for recovery actions
+- **Portfolio Metrics**: Expected recovery value across opportunities
+- **Recovery Queue**: Ranked opportunities ready for recovery
 
-### Settings
-- **Phase 2 Placeholder**: Clear indication of what's coming in Phase 3
+### Agentic Recovery Engine
+- **Workflow Management**: Bounded autonomous recovery workflows
+- **Action Execution**: Safe execution in Razorpay Test Mode
+- **State Machine**: DETECTED→PLANNED→READY→EXECUTING→SUCCEEDED/FAILED
+- **Recovery Attempts**: Track all actions with execution details
+- **Idempotency**: Prevent duplicate execution
+- **Audit Trail**: Complete audit log of all operations
+- **Stopping Rules**: Automatic stopping conditions (success, max attempts, repeated failures)
+
+### Governance & Safety Engine
+- **Policy Enforcement**: Backend-enforced governance on all actions
+- **Approval Workflow**: Approval queue for high-value or high-risk actions
+- **Action Allowlist**: Only explicitly supported recovery actions
+- **Policy Rules**: Maximum attempts, customer contacts, expected value, probability thresholds
+- **Friction Protection**: Customer fatigue protection with friction scoring
+- **Time Windows**: Execution allowed in specific time windows only
+- **Emergency Controls**: Pause/resume all autonomous recovery execution
+- **Policy Dashboard**: View and manage merchant policies
+- **Governance Audit**: Complete audit of all policy decisions
 
 ## API Endpoints
 
-### Phase 1: Revenue Endpoints
+### Revenue Endpoints
 ```
 GET  /health                              # Health check
 GET  /api/dashboard/revenue-summary       # Dashboard metrics
-GET  /api/dashboard/revenue-trend         # Revenue trends (30 days)
+GET  /api/dashboard/revenue-trend         # Revenue trends
 GET  /api/revenue-opportunities           # List opportunities with filters
 GET  /api/revenue-opportunities/{id}      # Opportunity details
 GET  /api/revenue-activity                # Revenue event timeline
 ```
 
-### Phase 2: Risk Intelligence Endpoints
+### Risk Intelligence Endpoints
 ```
 GET  /api/risk/summary                    # Risk summary metrics
 GET  /api/risk/queue?limit=20             # Top opportunities by priority
 GET  /api/risk/drivers                    # Risk breakdown by driver
-GET  /api/risk/cohort?dimension=...       # Risk by cohort (payment_method|failure_reason|opportunity_type)
+GET  /api/risk/cohort?dimension=...       # Risk by cohort
 GET  /api/risk/trend?days=30              # Risk trends over time
 GET  /api/risk/spike?days=7               # Spike detection
 GET  /api/risk/opportunities/{id}         # Detailed opportunity risk analysis
 GET  /api/risk/model-performance          # Model metrics and info
+```
+
+### Recovery Intelligence Endpoints
+```
+GET  /api/recovery/portfolio              # Portfolio metrics
+GET  /api/recovery/queue                  # Recovery opportunities queue
+GET  /api/recovery/recommendation/{id}    # Next best action for opportunity
+GET  /api/recovery/actions/{id}           # Action comparison
+```
+
+### Agentic Recovery & Governance Endpoints
+```
+POST /api/recovery/workflows/{id}         # Create recovery workflow
+POST /api/recovery/workflows/{id}/plan    # Plan recovery actions
+POST /api/recovery/workflows/{id}/validate  # Validate and ready workflow
+POST /api/recovery/workflows/{id}/execute  # Execute next action
+GET  /api/recovery/workflows/{id}         # Get workflow state
+GET  /api/recovery/workflows/{id}/audit   # Get audit trail
+GET  /api/recovery/control-center         # Control center summary
+
+GET  /api/governance/policies             # Get current policies
+PUT  /api/governance/policies/{type}      # Update policy
+POST /api/governance/evaluate             # Evaluate action against policies
+GET  /api/governance/approvals            # Get approval queue
+GET  /api/governance/approvals/{id}       # Get specific approval
+POST /api/governance/approvals/{id}/approve  # Approve request
+POST /api/governance/approvals/{id}/reject   # Reject request
+POST /api/governance/pause                # Pause all recovery execution
+POST /api/governance/resume               # Resume recovery execution
+GET  /api/governance/dashboard            # Governance dashboard summary
 ```
 
 ## Database
@@ -212,7 +249,7 @@ GET  /api/risk/model-performance          # Model metrics and info
 - 33+ revenue opportunities with realistic failure patterns
 - Data is reproducible (seeded with fixed random seed)
 
-### Phase 2 Risk Classifications
+## Risk Classifications
 - Each opportunity is classified by:
   - **Risk Level**: LOW, MEDIUM, HIGH, CRITICAL (based on age and transaction patterns)
   - **Recoverability**: LOW, MEDIUM, HIGH (based on failure type)
@@ -239,99 +276,85 @@ Based on recoverability classification:
 
 ## Testing
 
-### Phase 1 Tests
-Run Phase 1 business logic validation:
+Run the comprehensive verification suite:
 
 ```bash
 cd backend
-python test_runner.py
+python verify_governance.py
 ```
 
-Or run pytest:
+Validates:
+- Policy rules and validation
+- Governance evaluation engine
+- Approval workflow
+- Pause/resume controls
+- Component integration
+
+Run pytest for business logic tests:
 
 ```bash
+cd backend
 pytest tests.py -v
 ```
 
-Validates:
-- Data generation (15 customers, 186+ transactions)
-- Revenue calculations
-- Health score computation
-- Trend analysis
-- Risk breakdown
-
-### Phase 2 Tests
-Run Phase 2 risk intelligence verification:
+Or run governance tests:
 
 ```bash
 cd backend
-python verify_phase2.py
+pytest tests_governance.py -v
 ```
 
-Or run pytest:
+## Architecture
 
-```bash
-pytest tests_phase2.py -v
+### Backend Structure
+- **Models**: SQLAlchemy database models for customers, transactions, opportunities, recovery executions, approvals
+- **Business Logic**: Revenue calculations, risk scoring, recovery recommendations
+- **Recovery Engine**: Agent planner for bounded autonomous recovery workflows
+- **Governance**: Policy enforcement, approval workflow, emergency controls
+- **Audit**: Complete audit trail of all operations
+
+### Frontend Structure
+- **Pages**: Dashboard, Revenue Opportunities, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety
+- **Components**: Reusable UI components for cards, tables, charts
+- **API Client**: Typed API integration with all backend endpoints
+- **Types**: Complete TypeScript type definitions
+
+### Execution Flow
 ```
-
-Validates:
-- Feature engineering (26 features)
-- Model training (LogisticRegression)
-- Risk scoring and classification
-- Risk analytics (drivers, trends, cohorts)
-- API integration
-
-## Design Principles
-
-### Code Quality
-- Clear, readable code with minimal comments
-- Small, focused functions and components
-- Sensible module boundaries
-- No unnecessary abstractions
-
-### UI/UX
-- Professional fintech operations dashboard aesthetic
-- Information-dense and easy to scan
-- Clean typography and spacing
-- Color used to communicate status (success, warning, risk, critical)
-- No excessive animations or decorative elements
-
-### Architecture
-- Backend calculations are authoritative (frontend displays only)
-- Deterministic business logic (no AI/ML in Phase 1)
-- Organized for future ML/intelligence layers
-- Separation between data persistence and business logic
+Revenue Opportunity
+        ↓
+Risk Intelligence (ML-powered scoring)
+        ↓
+Recovery Intelligence (Action recommendation)
+        ↓
+Agent Planner (Workflow creation)
+        ↓
+Governance Engine (Policy evaluation)
+        ↓
+Decision (ALLOWED / BLOCKED / REQUIRES_APPROVAL / DEFERRED)
+        ↓
+Approval Queue (If approval required)
+        ↓
+Action Executor (Safe execution in Test Mode)
+        ↓
+Razorpay Test Mode (Sandboxed execution)
+        ↓
+Audit Trail (Complete record)
+```
 
 ## Implementation Status
 
-### Phase 1: Revenue Command Center ✓ COMPLETE
-**Fully Implemented:**
+**Complete & Production Ready:**
 - Revenue risk detection and classification
-- Dashboard with key metrics and visualizations
-- Opportunity management and filtering
-- Activity timeline
-- Error and loading states
-- Deterministic business logic
-
-### Phase 2: Risk Intelligence ✓ COMPLETE
-**Fully Implemented:**
-- Feature engineering (26 features from transactions/customers/opportunities)
-- ML-based loss prediction (LogisticRegression)
-- Risk scoring (0-100) and classification (LOW/MEDIUM/HIGH/CRITICAL)
-- Priority scoring (expected loss × recoverability × urgency)
-- Risk drivers extraction (structured feature inspection)
-- Risk analytics (summary, queue, drivers, trends, spike detection, cohorts)
-- Model explainability (feature importance, confidence levels)
-- Risk Intelligence frontend page with charts and queue
-- 8 new Risk API endpoints
-
-**Not Implemented (Future Phases):**
-- Next Best Action recommendations
-- Next Best Time optimization
-- Recovery portfolio optimization
-- Automated recovery execution
-- Razorpay integration
-- LLM assistance (Ollama/Qwen3)
+- ML-powered risk scoring and prediction
+- Recovery action recommendations
+- Recovery workflow orchestration with safe execution
+- Governance & Safety Engine with policy enforcement
+- Approval workflow for high-value actions
+- Emergency pause/resume controls
+- Comprehensive audit trail
+- Backend policy enforcement (no frontend bypass)
+- Razorpay Test Mode integration
 
 ## Environment Variables
 
@@ -357,9 +380,10 @@ FRONTEND_URL=http://localhost:5173     # Frontend URL for CORS
 
 ## Performance Notes
 
-- SQLite is sufficient for Phase 1 data volumes
+- SQLite is sufficient for development
 - Frontend loads data on-demand per page
-- No real-time updates in Phase 1 (refresh to see new data)
+- Governance checks are fast (deterministic backend logic)
+- No LLM invocation for policy evaluation (performance critical)
 - Charts render efficiently with Recharts
 
 ## Security
@@ -368,42 +392,50 @@ FRONTEND_URL=http://localhost:5173     # Frontend URL for CORS
 - No secrets committed to repository
 - CORS configured for development
 - SQL queries use SQLAlchemy ORM (safe from injection)
+- Backend enforces all policies (no frontend bypass)
+- Test Mode only for Razorpay integration
+- Hard safety limits cannot be modified through merchant settings
 
 ## Future Considerations
 
 - PostgreSQL for production scale
 - Redis caching for dashboard metrics
 - WebSocket for real-time updates
-- Model versioning and comparison (currently keeps only latest)
-- Advanced feature engineering
-- Razorpay Test Mode integration
-- Local Ollama + Qwen3 4B for merchant copilot
+- Advanced feature engineering for recovery
+- LLM integration for policy explanation (Ollama + Qwen3 4B)
+- Production Razorpay integration
+- Multiple merchant support
+- Advanced approval workflow rules
 
 ## Development Notes
 
 ### ML Model Artifacts
-The `backend/risk_models/` directory contains generated model artifacts (pickled model, scaler, metadata). These are:
+The `backend/risk_models/` directory contains generated model artifacts. These are:
 - Generated automatically on first API request or `init_db.py` run
 - Not committed to Git (.gitignore prevents this)
 - Recreated on each fresh database initialization
 - Safe to delete locally (will be retrained on next startup)
 
-To retrain the model after changes:
-1. Delete `backend/risk_models/` directory
-2. Restart the backend or call an API endpoint
-3. Model will auto-train from current database data
+### Governance Policy System
+Policies are enforced on the backend and cannot be bypassed from the frontend:
+- All actions pass through governance evaluation before execution
+- Policies are stored in PolicySet with validation
+- Approval requests are created for actions requiring approval
+- Merchant can configure safe policies (validators prevent unsafe values)
+- Hard limits like test-mode-only cannot be changed
 
-### Adding New Risk Features
-1. Add feature extraction to `risk_features.py` (RiskFeatureEngine class)
-2. Update `get_feature_names()` to include new feature
-3. Model will automatically retrain with new features
-4. No other changes needed - auto-detected on next training
+### Adding Governance Policies
+1. Define PolicyType in `policy_rules.py`
+2. Add default value in DefaultPolicies
+3. Add validation in PolicyValidator
+4. Policies are automatically available through API
+5. Frontend displays editable policies
 
 ## Support
 
-For the Razorpay Buildathon, please refer to the specification in the root directory.
+For implementation details, refer to the API endpoints and test suites.
 
 ---
 
-**Version:** 0.2.0 (Phase 1 + Phase 2)  
-**Status:** MVP - Revenue Command Center + Risk Intelligence complete
+**Status:** Complete - Revenue Risk Intelligence & Safe Autonomous Recovery Platform
+**Last Updated:** 2026

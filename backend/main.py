@@ -639,6 +639,207 @@ def get_recovery_control_center(db: Session = Depends(get_db)):
                 for w in active_workflows
             ],
         }
+
+
+# Phase 5: Governance & Safety
+
+@app.get("/api/governance/policies")
+def get_policies():
+    """Get current governance policies."""
+    try:
+        from governance_service import governance_engine
+        return {
+            "policies": governance_engine.policy_set.to_dict(),
+            "is_paused": governance_engine.is_paused,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/governance/policies/{policy_type}")
+def update_policy(policy_type: str, update: dict):
+    """Update a governance policy."""
+    try:
+        from governance_service import governance_engine
+        from policy_rules import PolicyType
+        
+        # Validate policy type
+        try:
+            p_type = PolicyType(policy_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Unknown policy: {policy_type}")
+        
+        # Update
+        success, error = governance_engine.policy_set.update_policy(p_type, update.get("value"))
+        if not success:
+            raise HTTPException(status_code=400, detail=error)
+        
+        return {
+            "success": True,
+            "policy": governance_engine.policy_set.get_policy(p_type).to_dict(),
+            "message": f"Policy {policy_type} updated successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/governance/evaluate")
+def evaluate_governance(evaluation_request: dict):
+    """Evaluate if an action is allowed."""
+    try:
+        from governance_service import governance_engine
+        
+        evaluation = governance_engine.evaluate(
+            action_type=evaluation_request.get("action_type", ""),
+            amount=float(evaluation_request.get("amount", 0)),
+            expected_value=float(evaluation_request.get("expected_value", 0)),
+            recovery_probability=float(evaluation_request.get("recovery_probability", 0)),
+            friction_score=float(evaluation_request.get("friction_score", 50)),
+            customer_id=evaluation_request.get("customer_id", ""),
+            attempt_count=int(evaluation_request.get("attempt_count", 0)),
+            customer_contact_count=int(evaluation_request.get("customer_contact_count", 0)),
+            daily_actions_for_customer=int(evaluation_request.get("daily_actions_for_customer", 0)),
+            weekly_actions_for_customer=int(evaluation_request.get("weekly_actions_for_customer", 0)),
+        )
+        
+        return evaluation.to_dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/governance/approvals")
+def get_approvals(status: Optional[str] = None):
+    """Get approval requests."""
+    try:
+        from approval_service import approval_queue
+        
+        summary = approval_queue.get_summary()
+        return summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/governance/approvals/{request_id}")
+def get_approval(request_id: str):
+    """Get a specific approval request."""
+    try:
+        from approval_service import approval_queue
+        
+        request = approval_queue.get_request(request_id)
+        if not request:
+            raise HTTPException(status_code=404, detail="Approval request not found")
+        
+        return request.to_dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/governance/approvals/{request_id}/approve")
+def approve_request(request_id: str, reviewer_note: Optional[str] = None):
+    """Approve an approval request."""
+    try:
+        from approval_service import approval_queue
+        
+        success, error = approval_queue.approve(request_id, reviewer_note)
+        if not success:
+            raise HTTPException(status_code=400, detail=error)
+        
+        request = approval_queue.get_request(request_id)
+        return {
+            "success": True,
+            "approval": request.to_dict(),
+            "message": "Approval granted",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/governance/approvals/{request_id}/reject")
+def reject_request(request_id: str, reviewer_note: Optional[str] = None):
+    """Reject an approval request."""
+    try:
+        from approval_service import approval_queue
+        
+        success, error = approval_queue.reject(request_id, reviewer_note)
+        if not success:
+            raise HTTPException(status_code=400, detail=error)
+        
+        request = approval_queue.get_request(request_id)
+        return {
+            "success": True,
+            "approval": request.to_dict(),
+            "message": "Approval rejected",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/governance/pause")
+def pause_recovery(reason: Optional[str] = None):
+    """Pause all recovery execution."""
+    try:
+        from governance_service import governance_engine
+        governance_engine.pause()
+        return {
+            "success": True,
+            "is_paused": True,
+            "reason": reason,
+            "message": "Recovery execution paused",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/governance/resume")
+def resume_recovery():
+    """Resume recovery execution."""
+    try:
+        from governance_service import governance_engine
+        governance_engine.resume()
+        return {
+            "success": True,
+            "is_paused": False,
+            "message": "Recovery execution resumed - pending workflows will be re-evaluated",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/governance/dashboard")
+def get_governance_dashboard(db: Session = Depends(get_db)):
+    """Get governance dashboard summary."""
+    try:
+        from governance_service import governance_engine
+        from approval_service import approval_queue
+        from models import RecoveryAttempt
+        from datetime import datetime, timedelta
+        
+        # Count actions by type
+        today = datetime.utcnow().date()
+        today_start = datetime.combine(today, datetime.min.time())
+        today_end = datetime.combine(today, datetime.max.time())
+        
+        today_attempts = db.query(RecoveryAttempt).filter(
+            RecoveryAttempt.created_at >= today_start,
+            RecoveryAttempt.created_at <= today_end,
+        ).all()
+        
+        return {
+            "is_paused": governance_engine.is_paused,
+            "autonomous_actions_today": len(today_attempts),
+            "pending_approvals": approval_queue.get_summary()["pending_count"],
+            "total_policies": len(governance_engine.policy_set.policies),
+            "active_policies": sum(1 for p in governance_engine.policy_set.policies.values() if p.enabled),
+            "approval_summary": approval_queue.get_summary(),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -646,3 +847,4 @@ def get_recovery_control_center(db: Session = Depends(get_db)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
+

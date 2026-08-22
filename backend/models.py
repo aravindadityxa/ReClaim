@@ -152,3 +152,56 @@ class RecoveryExecution(Base):
     started_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ApprovalRequestStatus(str, enum.Enum):
+    """Phase 5: Status of an approval request."""
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+
+
+class ApprovalRequestModel(Base):
+    """Phase 5: Approval request tracking."""
+    __tablename__ = "approval_requests"
+
+    id = Column(String, primary_key=True, index=True)
+    opportunity_id = Column(String, ForeignKey("revenue_opportunities.id"), index=True)
+    customer_id = Column(String, ForeignKey("customers.id"), index=True)
+    action_type = Column(String, index=True)
+    amount = Column(Float)
+    expected_value = Column(Float, nullable=True)
+    recovery_probability = Column(Float, nullable=True)
+    reason = Column(String)
+    status = Column(Enum(ApprovalRequestStatus), index=True, default=ApprovalRequestStatus.PENDING)
+    requested_at = Column(DateTime, index=True, default=datetime.utcnow)
+    expires_at = Column(DateTime, index=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    reviewer_note = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    opportunity = relationship("RevenueOpportunity")
+    customer = relationship("Customer")
+
+
+class PolicyChangeStatus(str, enum.Enum):
+    """Phase 5: Type of policy change."""
+    CREATED = "CREATED"
+    UPDATED = "UPDATED"
+    DELETED = "DELETED"
+
+
+class PolicyChangeLog(Base):
+    """Phase 5: Audit trail of policy changes."""
+    __tablename__ = "policy_change_logs"
+
+    id = Column(String, primary_key=True, index=True)
+    policy_type = Column(String, index=True)
+    change_type = Column(Enum(PolicyChangeStatus))
+    previous_value = Column(String, nullable=True)  # JSON string
+    new_value = Column(String, nullable=True)  # JSON string
+    reason = Column(String, nullable=True)
+    created_at = Column(DateTime, index=True, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

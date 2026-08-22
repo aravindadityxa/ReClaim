@@ -316,3 +316,121 @@ class RecoveryDashboardMetricsSchema(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Phase 5: Governance & Safety
+
+class PolicySchema(BaseModel):
+    """A single governance policy."""
+    policy_type: str
+    value: any
+    enabled: bool
+    description: str
+    editable: bool
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class PolicySetSchema(BaseModel):
+    """Complete set of policies."""
+    policies: dict[str, PolicySchema]
+    
+    class Config:
+        from_attributes = True
+
+
+class GovernanceEvaluationSchema(BaseModel):
+    """Result of governance evaluation."""
+    decision: str  # ALLOWED, BLOCKED, REQUIRES_APPROVAL, DEFERRED
+    action: str
+    reason: str
+    policies_checked: list[str]
+    violations: list[str]
+    warnings: list[str]
+    approval_required: bool
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ApprovalRequestSchema(BaseModel):
+    """Approval request details."""
+    id: str
+    opportunity_id: str
+    customer_id: str
+    action_type: str
+    amount: float
+    expected_value: Optional[float] = None
+    recovery_probability: Optional[float] = None
+    reason: str
+    status: str  # PENDING, APPROVED, REJECTED, EXPIRED
+    requested_at: datetime
+    expires_at: datetime
+    reviewed_at: Optional[datetime] = None
+    reviewer_note: Optional[str] = None
+    is_expired: bool = False
+    
+    class Config:
+        from_attributes = True
+
+
+class ApprovalQueueSummarySchema(BaseModel):
+    """Approval queue summary."""
+    pending_count: int
+    approved_count: int
+    rejected_count: int
+    expired_count: int
+    total_requests: int
+    pending_requests: list[ApprovalRequestSchema]
+    recently_approved: list[ApprovalRequestSchema]
+    recently_rejected: list[ApprovalRequestSchema]
+    
+    class Config:
+        from_attributes = True
+
+
+class PolicyChangeLogSchema(BaseModel):
+    """Policy change audit entry."""
+    id: str
+    policy_type: str
+    change_type: str  # CREATED, UPDATED, DELETED
+    previous_value: Optional[str] = None
+    new_value: Optional[str] = None
+    reason: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class GovernanceDashboardSchema(BaseModel):
+    """Governance dashboard summary."""
+    is_paused: bool
+    autonomous_actions_today: int
+    blocked_actions_today: int
+    pending_approvals_count: int
+    deferred_actions_count: int
+    policy_violations_today: int
+    customer_contact_tracking: dict
+    recent_policy_changes: list[PolicyChangeLogSchema]
+    execution_window_info: dict
+    
+    class Config:
+        from_attributes = True
+
+
+class PauseResumeSchema(BaseModel):
+    """Request to pause or resume recovery."""
+    action: str  # pause or resume
+    reason: Optional[str] = None
+
+
+class PolicyUpdateSchema(BaseModel):
+    """Request to update a policy."""
+    policy_type: str
+    value: any
+    reason: Optional[str] = None

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import logging
 import uuid
 
-from models import RevenueOpportunity, OpportunityStatus
+from models import RevenueOpportunity, OpportunityStatus, RecoveryAttempt, RecoveryExecution as RecoveryExecutionModel
 from recovery_state import (
     RecoveryWorkflowState, RecoveryState, ActionExecution, ExecutionResult,
     RecoveryStateTransition
@@ -18,6 +18,8 @@ from recovery_config import RECOVERY_BOUNDS
 from policy_guard import PolicyGuard, ExecutionValidator
 from action_executor import executor
 from audit_service import AuditTrail
+from governance_service import governance_engine, GovernanceDecision
+from approval_service import approval_queue
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +161,7 @@ class RecoveryOrchestrator:
         audit: Optional[AuditTrail] = None,
     ) -> Tuple[RecoveryWorkflowState, Optional[str]]:
         """
-        Execute the next recovery action.
+        Execute the next recovery action with governance validation.
         
         Returns:
             (updated_workflow_state, error_message_if_failed)
@@ -183,7 +185,69 @@ class RecoveryOrchestrator:
                 audit.record_stopping_rule(opportunity_id, "No eligible action")
             return workflow, None
         
-        # Validate action can execute
+        # Get recommendation for metrics
+        recommendation = self.recommendation_engine.get_recommendation(opportunity_id) if workflow.plan else None
+        expected_value = recommendation.expected_net_value if recommendation else 0
+        recovery_probability = recommendation.recovery_probability if recommendation else 0
+        friction_score = recommendation.customer_friction_score if recommendation else 50
+        
+        # Count customer actions (for contact limits)
+        daily_actions = 0  # Would query database in production
+        weekly_actions = 0  # Would query database in production
+        
+        # GOVERNANCE EVALUATION - PHASE 5
+        governance_eval = governance_engine.evaluate(
+            action_type=next_action,
+            amount=opp.amount,
+            expected_value=expected_value,
+            recovery_probability=recovery_probability,
+            friction_score=friction_score,
+            customer_id=opp.customer_id,
+            attempt_count=workflow.attempt_count,
+            customer_contact_count=workflow.customer_contact_count,
+            daily_actions_for_customer=daily_actions,
+            weekly_actions_for_customer=weekly_actions,
+        )
+        
+        # Record governance decision
+        if audit:
+            audit.record_policy_decision(
+                opportunity_id,
+                governance_eval.decision.value,
+                governance_eval.reason,
+                {"policies_checked": governance_eval.policies_checked, "violations": governance_eval.violations}
+            )
+        
+        # Handle governance decision
+        if governance_eval.decision == GovernanceDecision.BLOCKED:
+            workflow.current_state = RecoveryState.STOPPED
+            workflow.stopping_reason = f"Governance blocked: {governance_eval.reason}"
+            return workflow, None
+        
+        elif governance_eval.decision == GovernanceDecision.DEFERRED:
+            workflow.current_state = RecoveryState.WAITING
+            workflow.stopping_reason = governance_eval.reason
+            logger.info(f"Action deferred for {opportunity_id}: {governance_eval.reason}")
+            return workflow, None
+        
+        elif governance_eval.decision == GovernanceDecision.REQUIRES_APPROVAL:
+            # Create approval request
+            approval_req = approval_queue.create_request(
+                opportunity_id=opportunity_id,
+                customer_id=opp.customer_id,
+                action_type=next_action,
+                amount=opp.amount,
+                expected_value=expected_value,
+                recovery_probability=recovery_probability,
+                reason=governance_eval.reason,
+            )
+            workflow.current_state = RecoveryState.WAITING
+            workflow.stopping_reason = f"Awaiting approval: {approval_req.id}"
+            logger.info(f"Approval required for {opportunity_id}: {approval_req.id}")
+            return workflow, None
+        
+        # ALLOWED - proceed with execution
+        # Validate action can execute (Phase 4 checks)
         can_execute, rejection_reason = PolicyGuard.can_execute_action(
             next_action,
             workflow,
@@ -195,7 +259,7 @@ class RecoveryOrchestrator:
         if not can_execute:
             if audit:
                 audit.record_policy_decision(opportunity_id, "REJECTED", rejection_reason)
-            return None, f"Action rejected by policy: {rejection_reason}"
+            return None, f"Action rejected by safety check: {rejection_reason}"
         
         if audit:
             audit.record_policy_decision(opportunity_id, "APPROVED", details={"action": next_action})
@@ -281,9 +345,9 @@ class RecoveryOrchestrator:
             workflow.current_state = RecoveryState.FAILED
         
         if audit:
-            audit.record_action_execution(opportunity_id, execution)
+            audit.record_action_execution(opportunity_id, execution, governance_eval.decision.value)
         
-        logger.info(f"Executed {next_action} for {opportunity_id}: {execution.result.value}")
+        logger.info(f"Executed {next_action} for {opportunity_id}: {execution.result.value} (Governance: {governance_eval.decision.value})")
         
         return workflow, None
     

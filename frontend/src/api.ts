@@ -127,6 +127,72 @@ export const api = {
 
   getRecoveryActions: (opportunityId: string) =>
     fetchJSON<RecoveryActionComparison>(`/recovery/actions/${opportunityId}`),
-}
 
-export { APIError }
+  // Phase 4: Agentic Recovery Engine
+  createRecoveryWorkflow: (opportunityId: string) =>
+    fetchJSON('/recovery/workflows/' + opportunityId, { method: 'POST' }),
+
+  planRecoveryWorkflow: (opportunityId: string) =>
+    fetchJSON(`/recovery/workflows/${opportunityId}/plan`, { method: 'POST' }),
+
+  validateRecoveryWorkflow: (opportunityId: string) =>
+    fetchJSON(`/recovery/workflows/${opportunityId}/validate`, { method: 'POST' }),
+
+  executeRecoveryAction: (opportunityId: string, isSimulation: boolean = true) =>
+    fetchJSON(`/recovery/workflows/${opportunityId}/execute?is_simulation=${isSimulation}`, { method: 'POST' }),
+
+  getRecoveryWorkflow: (opportunityId: string) =>
+    fetchJSON(`/recovery/workflows/${opportunityId}`),
+
+  getRecoveryAudit: (opportunityId: string) =>
+    fetchJSON(`/recovery/workflows/${opportunityId}/audit`),
+
+  getRecoveryControlCenter: () =>
+    fetchJSON('/recovery/control-center'),
+
+  // Phase 5: Governance & Safety
+  getGovernancePolicies: () =>
+    fetchJSON('/governance/policies'),
+
+  updateGovernancePolicy: (policyType: string, update: { value: any }) =>
+    fetchJSON(`/governance/policies/${policyType}`, {
+      method: 'PUT',
+      body: JSON.stringify(update),
+    }),
+
+  evaluateGovernance: (evaluation: any) =>
+    fetchJSON('/governance/evaluate', {
+      method: 'POST',
+      body: JSON.stringify(evaluation),
+    }),
+
+  getApprovals: (status?: string) =>
+    fetchJSON(`/governance/approvals${status ? `?status=${status}` : ''}`),
+
+  getApproval: (requestId: string) =>
+    fetchJSON(`/governance/approvals/${requestId}`),
+
+  approveApproval: (requestId: string, reviewerNote?: string) =>
+    fetchJSON(`/governance/approvals/${requestId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ reviewer_note: reviewerNote }),
+    }),
+
+  rejectApproval: (requestId: string, reviewerNote?: string) =>
+    fetchJSON(`/governance/approvals/${requestId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reviewer_note: reviewerNote }),
+    }),
+
+  pauseRecovery: (reason?: string) =>
+    fetchJSON('/governance/pause', {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  resumeRecovery: () =>
+    fetchJSON('/governance/resume', { method: 'POST' }),
+
+  getGovernanceDashboard: () =>
+    fetchJSON('/governance/dashboard'),
+}

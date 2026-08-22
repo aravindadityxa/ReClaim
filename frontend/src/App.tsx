@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap } from 'lucide-react'
+import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Opportunities from './pages/Opportunities'
 import RiskIntelligence from './pages/RiskIntelligence'
 import RecoveryIntelligence from './pages/RecoveryIntelligence'
+import RecoveryControlCenter from './pages/RecoveryControlCenter'
+import { GovernancePage } from './pages/GovernancePage'
 import ActivityPage from './pages/Activity'
 import SettingsPage from './pages/Settings'
 
-type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'activity' | 'settings'
+type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'control-center' | 'governance' | 'activity' | 'settings'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
@@ -17,6 +19,8 @@ export default function App() {
     { id: 'dashboard' as Page, label: 'Dashboard', icon: BarChart3 },
     { id: 'risk' as Page, label: 'Risk Intelligence', icon: AlertTriangle },
     { id: 'recovery' as Page, label: 'Recovery Intelligence', icon: Zap },
+    { id: 'control-center' as Page, label: 'Recovery Control Center', icon: Gauge },
+    { id: 'governance' as Page, label: 'Governance & Safety', icon: Shield },
     { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp },
     { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity },
     { id: 'settings' as Page, label: 'Settings', icon: Settings },
@@ -77,7 +81,7 @@ export default function App() {
         <div className="p-4 border-t border-gray-800">
           {sidebarOpen && (
             <p className="text-xs text-gray-500">
-              Phase 3 - Recovery Intelligence
+              Intelligent Revenue Recovery Platform
             </p>
           )}
         </div>
@@ -94,10 +98,12 @@ export default function App() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto">
-          <div className="p-8">
+          <div className={currentPage === 'governance' ? '' : 'p-8'}>
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'risk' && <RiskIntelligence />}
             {currentPage === 'recovery' && <RecoveryIntelligence />}
+            {currentPage === 'control-center' && <RecoveryControlCenter />}
+            {currentPage === 'governance' && <GovernancePage />}
             {currentPage === 'opportunities' && <Opportunities />}
             {currentPage === 'activity' && <ActivityPage />}
             {currentPage === 'settings' && <SettingsPage />}
