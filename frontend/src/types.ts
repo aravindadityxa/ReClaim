@@ -232,3 +232,18 @@ export interface RecoveryPortfolioMetrics {
   action_distribution: Record<string, number>
   recovery_potential_by_type: Record<string, number>
 }
+
+// Phase 5: Governance & Safety
+
+export interface GovernanceStatus {
+  is_paused: boolean
+  autonomous_actions_today: number
+  pending_approvals: number
+  total_policies: number
+  active_policies: number
+  approval_summary: {
+    pending_count: number
+    approved_count: number
+    rejected_count: number
+  }
+}

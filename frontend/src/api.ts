@@ -15,6 +15,7 @@ import {
   RecoveryOpportunitySummary,
   RecoveryRecommendation,
   RecoveryActionComparison,
+  GovernanceStatus,
 } from './types'
 
 const API_BASE = '/api'
@@ -194,7 +195,7 @@ export const api = {
     fetchJSON('/governance/resume', { method: 'POST' }),
 
   getGovernanceDashboard: () =>
-    fetchJSON('/governance/dashboard'),
+    fetchJSON<GovernanceStatus>('/governance/dashboard'),
 
   // Phase 6: Recovery Analytics & Optimization
   getRecoveryFunnel: (days: number = 30) =>

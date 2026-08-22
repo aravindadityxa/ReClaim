@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Play, AlertCircle, CheckCircle, Clock, Zap, Shield, PauseCircle } from 'lucide-react'
 import { api, APIError } from '../api'
+import { GovernanceStatus } from '../types'
 import LoadingState from '../components/LoadingState'
 import ErrorState from '../components/ErrorState'
 
@@ -18,12 +19,6 @@ interface ControlCenterData {
   recent_attempts_count: number
   total_attempts: number
   active_summary: Workflow[]
-}
-
-interface GovernanceStatus {
-  is_paused: boolean;
-  autonomous_actions_today: number;
-  pending_approvals: number;
 }
 
 export default function RecoveryControlCenter() {
