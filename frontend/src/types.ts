@@ -247,3 +247,105 @@ export interface GovernanceStatus {
     rejected_count: number
   }
 }
+
+// Production Reliability & Observability
+
+export interface ServiceHealth {
+  name: string
+  status: "healthy" | "degraded" | "unhealthy"
+  message: string
+  details: Record<string, any>
+  checked_at: string
+}
+
+export interface SystemHealthResponse {
+  status: "healthy" | "degraded" | "unhealthy"
+  timestamp: string
+  checks: Record<string, ServiceHealth>
+  summary: {
+    total_checks: number
+    healthy: number
+    degraded: number
+    unhealthy: number
+  }
+}
+
+export interface OperationalMetrics {
+  timestamp: string
+  recovery_attempts: {
+    total_attempts: number
+    successful: number
+    failed: number
+    success_rate: number
+    pending_execution: number
+  }
+  workflows: {
+    total_workflows: number
+    active: number
+    failed: number
+    stopped: number
+    completed: number
+  }
+  governance: {
+    pending_approvals: number
+    approved: number
+    rejected: number
+    is_paused: boolean
+    active_policies: number
+  }
+  revenue: {
+    revenue_at_risk: number
+    revenue_recovered: number
+    at_risk_opportunities: number
+    average_recovery_time_seconds: number
+  }
+  executor: {
+    by_action_type: Record<string, any>
+    total_actions: number
+  }
+  measurement: {
+    total_outcomes: number
+    succeeded_outcomes: number
+    total_recovered_amount: number
+    total_incremental_revenue: number
+  }
+  errors_24h: {
+    period_hours: number
+    total_errors: number
+    error_codes: Record<string, number>
+  }
+}
+
+export interface SystemError {
+  error_id: string
+  timestamp: string
+  component: string
+  operation: string
+  message: string
+  severity: "INFO" | "WARNING" | "ERROR" | "CRITICAL"
+  workflow_id?: string
+  opportunity_id?: string
+  customer_id?: string
+  details: Record<string, any>
+  resolution_status: "RESOLVED" | "UNRESOLVED"
+  resolved_at?: string
+}
+
+export interface SystemErrorResponse {
+  errors: SystemError[]
+  count: number
+  timestamp: string
+}
+
+export interface SystemStatus {
+  system_health: "healthy" | "degraded" | "unhealthy"
+  timestamp: string
+  summary: {
+    services_healthy: number
+    services_degraded: number
+    services_unhealthy: number
+    total_errors: number
+    unresolved_errors: number
+    critical_errors: number
+  }
+}

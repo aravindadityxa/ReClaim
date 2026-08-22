@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield, LineChart } from 'lucide-react'
+import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield, LineChart, Cpu } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Opportunities from './pages/Opportunities'
 import RiskIntelligence from './pages/RiskIntelligence'
@@ -7,10 +7,11 @@ import RecoveryIntelligence from './pages/RecoveryIntelligence'
 import RecoveryControlCenter from './pages/RecoveryControlCenter'
 import { GovernancePage } from './pages/GovernancePage'
 import { RecoveryAnalyticsPage } from './pages/RecoveryAnalyticsPage'
+import { SystemHealth } from './pages/SystemHealth'
 import ActivityPage from './pages/Activity'
 import SettingsPage from './pages/Settings'
 
-type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'control-center' | 'governance' | 'analytics' | 'activity' | 'settings'
+type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'control-center' | 'governance' | 'analytics' | 'health' | 'activity' | 'settings'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
@@ -23,6 +24,7 @@ export default function App() {
     { id: 'control-center' as Page, label: 'Recovery Control Center', icon: Gauge },
     { id: 'analytics' as Page, label: 'Recovery Analytics', icon: LineChart },
     { id: 'governance' as Page, label: 'Governance & Safety', icon: Shield },
+    { id: 'health' as Page, label: 'System Health', icon: Cpu },
     { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp },
     { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity },
     { id: 'settings' as Page, label: 'Settings', icon: Settings },
@@ -107,6 +109,7 @@ export default function App() {
             {currentPage === 'control-center' && <RecoveryControlCenter />}
             {currentPage === 'analytics' && <RecoveryAnalyticsPage />}
             {currentPage === 'governance' && <GovernancePage />}
+            {currentPage === 'health' && <SystemHealth />}
             {currentPage === 'opportunities' && <Opportunities />}
             {currentPage === 'activity' && <ActivityPage />}
             {currentPage === 'settings' && <SettingsPage />}

@@ -16,6 +16,10 @@ import {
   RecoveryRecommendation,
   RecoveryActionComparison,
   GovernanceStatus,
+  SystemHealthResponse,
+  OperationalMetrics,
+  SystemErrorResponse,
+  SystemStatus,
 } from './types'
 
 const API_BASE = '/api'
@@ -212,4 +216,30 @@ export const api = {
 
   getStrategyRecommendations: (opportunityType: string) =>
     fetchJSON(`/analytics/recovery/recommendations?opportunity_type=${opportunityType}`),
+
+  // Production Reliability & Observability
+  getSystemHealth: () =>
+    fetchJSON<SystemHealthResponse>('/system/health'),
+
+  getSystemMetrics: () =>
+    fetchJSON<OperationalMetrics>('/system/metrics'),
+
+  getSystemErrors: (params?: {
+    limit?: number
+    severity?: string
+    component?: string
+    workflow_id?: string
+    unresolved_only?: boolean
+  }) => {
+    const q = new URLSearchParams()
+    if (params?.limit) q.append('limit', params.limit.toString())
+    if (params?.severity) q.append('severity', params.severity)
+    if (params?.component) q.append('component', params.component)
+    if (params?.workflow_id) q.append('workflow_id', params.workflow_id)
+    if (params?.unresolved_only) q.append('unresolved_only', 'true')
+    return fetchJSON<SystemErrorResponse>(`/system/errors?${q.toString()}`)
+  },
+
+  getSystemStatus: () =>
+    fetchJSON<SystemStatus>('/system/status'),
 }

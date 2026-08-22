@@ -941,6 +941,103 @@ def get_strategy_recommendations(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Production Reliability & Observability Endpoints
+
+@app.get("/api/system/health")
+def get_system_health(db: Session = Depends(get_db)):
+    """Get comprehensive system health status."""
+    try:
+        from health_service import initialize_health_checker, get_health_checker
+        
+        # Initialize if needed
+        if get_health_checker() is None:
+            initialize_health_checker(db)
+        
+        checker = get_health_checker()
+        return checker.perform_full_check()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/system/metrics")
+def get_system_metrics(db: Session = Depends(get_db)):
+    """Get operational metrics."""
+    try:
+        from metrics_service import OperationalMetrics
+        metrics = OperationalMetrics(db)
+        return metrics.get_all_metrics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/system/errors")
+def get_system_errors(
+    limit: int = Query(50, ge=1, le=500),
+    severity: Optional[str] = None,
+    component: Optional[str] = None,
+    workflow_id: Optional[str] = None,
+    unresolved_only: bool = False,
+):
+    """Get tracked system errors."""
+    try:
+        from error_tracker import error_tracker, ErrorSeverity
+        
+        if unresolved_only:
+            errors = error_tracker.get_unresolved_errors(limit)
+        elif severity:
+            try:
+                sev = ErrorSeverity[severity.upper()]
+                errors = error_tracker.get_errors_by_severity(sev, limit)
+            except KeyError:
+                raise HTTPException(status_code=400, detail=f"Invalid severity: {severity}")
+        elif component:
+            errors = error_tracker.get_errors_by_component(component, limit)
+        elif workflow_id:
+            errors = error_tracker.get_errors_for_workflow(workflow_id)
+        else:
+            errors = error_tracker.get_recent_errors(limit)
+        
+        return {
+            "errors": errors,
+            "count": len(errors),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/system/status")
+def get_system_status(db: Session = Depends(get_db)):
+    """Get quick system status."""
+    try:
+        from health_service import initialize_health_checker, get_health_checker
+        from error_tracker import error_tracker
+        
+        # Initialize health checker if needed
+        if get_health_checker() is None:
+            initialize_health_checker(db)
+        
+        health = get_health_checker().perform_full_check()
+        errors = error_tracker.get_summary()
+        
+        return {
+            "system_health": health["status"],
+            "timestamp": datetime.utcnow().isoformat(),
+            "summary": {
+                "services_healthy": health["summary"]["healthy"],
+                "services_degraded": health["summary"]["degraded"],
+                "services_unhealthy": health["summary"]["unhealthy"],
+                "total_errors": errors["total_errors"],
+                "unresolved_errors": errors["unresolved"],
+                "critical_errors": errors["by_severity"].get("CRITICAL", 0),
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
