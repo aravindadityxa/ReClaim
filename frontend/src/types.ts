@@ -171,3 +171,64 @@ export interface ModelPerformance {
     }
   }
 }
+
+// Phase 3: Recovery Intelligence
+
+export interface NextBestTime {
+  recommended_date: string
+  recommended_time_window_start: string
+  recommended_time_window_end: string
+  urgency_level: string
+  rationale: string
+}
+
+export interface RecoveryActionCandidate {
+  action_type: string
+  recovery_probability: number
+  expected_recovered_amount: number
+  action_cost: number
+  customer_friction_score: number
+  confidence: number
+  expected_net_value: number
+  reason: string
+}
+
+export interface RecoveryRecommendation {
+  opportunity_id: string
+  recommended_action: string
+  recovery_probability: number
+  expected_recovered_amount: number
+  expected_net_value: number
+  customer_friction_score: number
+  why_this_action: string
+  next_best_time: NextBestTime
+  stopping_rules: string[]
+  confidence: number
+}
+
+export interface RecoveryActionComparison {
+  opportunity_id: string
+  candidates: RecoveryActionCandidate[]
+}
+
+export interface RecoveryOpportunitySummary {
+  opportunity_id: string
+  amount: number
+  recommended_action: string
+  recovery_probability: number
+  expected_recovery: number
+  expected_net_value: number
+  customer_friction: number
+}
+
+export interface RecoveryPortfolioMetrics {
+  total_revenue_at_risk: number
+  expected_recovery_from_recommended_actions: number
+  estimated_recovery_percentage: number
+  high_priority_opportunity_count: number
+  average_friction_score: number
+  total_estimated_contacts: number
+  estimated_recovery_effort_hours: number
+  action_distribution: Record<string, number>
+  recovery_potential_by_type: Record<string, number>
+}

@@ -11,6 +11,10 @@ import {
   RiskTrendPoint,
   RiskSpike,
   ModelPerformance,
+  RecoveryPortfolioMetrics,
+  RecoveryOpportunitySummary,
+  RecoveryRecommendation,
+  RecoveryActionComparison,
 } from './types'
 
 const API_BASE = '/api'
@@ -111,6 +115,18 @@ export const api = {
     getModelPerformance: () =>
       fetchJSON<ModelPerformance>('/risk/model-performance'),
   },
+
+  getRecoveryPortfolioMetrics: () =>
+    fetchJSON<RecoveryPortfolioMetrics>('/recovery/portfolio'),
+
+  getRecoveryQueue: (limit: number = 20) =>
+    fetchJSON<RecoveryOpportunitySummary[]>(`/recovery/queue?limit=${limit}`),
+
+  getRecoveryRecommendation: (opportunityId: string) =>
+    fetchJSON<RecoveryRecommendation>(`/recovery/recommendation/${opportunityId}`),
+
+  getRecoveryActions: (opportunityId: string) =>
+    fetchJSON<RecoveryActionComparison>(`/recovery/actions/${opportunityId}`),
 }
 
 export { APIError }

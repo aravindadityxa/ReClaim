@@ -10,7 +10,8 @@ from business_logic import RevenueAnalytics
 from schemas import (
     DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
     RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint,
-    RiskSummary
+    RiskSummary, RecoveryRecommendationSchema, RecoveryActionComparisonSchema,
+    RecoveryPortfolioMetricsSchema, RecoveryDashboardMetricsSchema
 )
 from config import FRONTEND_URL, BACKEND_PORT
 
@@ -303,6 +304,134 @@ def get_model_performance(db: Session = Depends(get_db)):
             }
         
         return model.metadata
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Phase 3: Recovery Intelligence APIs
+
+@app.get("/api/recovery/recommendation/{opportunity_id}", response_model=RecoveryRecommendationSchema)
+def get_recovery_recommendation(opportunity_id: str, db: Session = Depends(get_db)):
+    """Get recovery recommendation for an opportunity."""
+    try:
+        from risk_analytics import RiskAnalytics
+        from recovery_engine import RecoveryRecommendationEngine
+        
+        # Get opportunity
+        opp = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.id == opportunity_id
+        ).first()
+        
+        if not opp:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        # Get risk intelligence from Phase 2
+        risk_analytics = RiskAnalytics(db)
+        risk_info = risk_analytics.compute_opportunity_risk(opportunity_id)
+        
+        # Get customer history
+        customer = opp.customer
+        customer_opps = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.customer_id == customer.id
+        ).all()
+        
+        recovered_count = len([o for o in customer_opps if o.status == OpportunityStatus.RECOVERED])
+        customer_history = {
+            "recovery_rate": recovered_count / len(customer_opps) if customer_opps else 0.5,
+            "total_value": sum(o.amount for o in customer_opps) if customer_opps else 0,
+        }
+        
+        # Generate recovery recommendation
+        engine = RecoveryRecommendationEngine(db)
+        recommendation = engine.get_recommendation(opp, risk_info, customer_history)
+        
+        return recommendation
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/actions/{opportunity_id}", response_model=RecoveryActionComparisonSchema)
+def get_recovery_action_comparison(opportunity_id: str, db: Session = Depends(get_db)):
+    """Get comparison of all eligible recovery actions for an opportunity."""
+    try:
+        from risk_analytics import RiskAnalytics
+        from recovery_engine import RecoveryRecommendationEngine
+        
+        # Get opportunity
+        opp = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.id == opportunity_id
+        ).first()
+        
+        if not opp:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        # Get risk intelligence
+        risk_analytics = RiskAnalytics(db)
+        risk_info = risk_analytics.compute_opportunity_risk(opportunity_id)
+        
+        # Get customer history
+        customer = opp.customer
+        customer_opps = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.customer_id == customer.id
+        ).all()
+        
+        recovered_count = len([o for o in customer_opps if o.status == OpportunityStatus.RECOVERED])
+        customer_history = {
+            "recovery_rate": recovered_count / len(customer_opps) if customer_opps else 0.5,
+            "total_value": sum(o.amount for o in customer_opps) if customer_opps else 0,
+        }
+        
+        # Get action comparison
+        engine = RecoveryRecommendationEngine(db)
+        comparison = engine.get_action_comparison(opp, risk_info, customer_history)
+        
+        return comparison
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/portfolio", response_model=RecoveryPortfolioMetricsSchema)
+def get_recovery_portfolio_metrics(db: Session = Depends(get_db)):
+    """Get aggregated recovery metrics for merchant portfolio."""
+    try:
+        from recovery_analytics import RecoveryAnalytics as RecoveryAnalyticsEngine
+        
+        analytics = RecoveryAnalyticsEngine(db)
+        metrics = analytics.get_portfolio_metrics()
+        
+        return metrics
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/dashboard", response_model=RecoveryDashboardMetricsSchema)
+def get_recovery_dashboard_metrics(db: Session = Depends(get_db)):
+    """Get comprehensive recovery dashboard metrics."""
+    try:
+        from recovery_analytics import RecoveryAnalytics as RecoveryAnalyticsEngine
+        
+        analytics = RecoveryAnalyticsEngine(db)
+        metrics = analytics.get_dashboard_metrics()
+        
+        return metrics
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recovery/queue")
+def get_recovery_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    """Get top recovery opportunities ranked by expected value."""
+    try:
+        from recovery_analytics import RecoveryAnalytics as RecoveryAnalyticsEngine
+        
+        analytics = RecoveryAnalyticsEngine(db)
+        queue = analytics.get_recovery_queue(limit)
+        
+        return queue
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

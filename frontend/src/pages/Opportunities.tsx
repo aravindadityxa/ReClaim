@@ -6,6 +6,8 @@ import Badge from '../components/Badge'
 import LoadingState from '../components/LoadingState'
 import ErrorState from '../components/ErrorState'
 import EmptyState from '../components/EmptyState'
+import RecoveryRecommendationCard from '../components/RecoveryRecommendationCard'
+import RecoveryActionComparison from '../components/RecoveryActionComparison'
 
 type SortBy = 'created_at' | 'amount' | 'risk_level'
 type SortOrder = 'asc' | 'desc'
@@ -351,8 +353,12 @@ function OpportunityDetailModal({
   onClose: () => void
 }) {
   const [detail, setDetail] = useState<any>(null)
+  const [recovery, setRecovery] = useState<any>(null)
+  const [recoveryActions, setRecoveryActions] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingRecovery, setLoadingRecovery] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [recoveryError, setRecoveryError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadDetail = async () => {
@@ -368,6 +374,28 @@ function OpportunityDetailModal({
       }
     }
     loadDetail()
+  }, [opportunityId])
+
+  useEffect(() => {
+    const loadRecovery = async () => {
+      try {
+        setLoadingRecovery(true)
+        setRecoveryError(null)
+        const [recData, actionsData] = await Promise.all([
+          api.getRecoveryRecommendation(opportunityId),
+          api.getRecoveryActions(opportunityId),
+        ])
+        setRecovery(recData)
+        setRecoveryActions(actionsData)
+      } catch (err) {
+        // Recovery data is optional, don't fail the modal if it's not available
+        const message = err instanceof Error ? err.message : 'Recovery data unavailable'
+        setRecoveryError(message)
+      } finally {
+        setLoadingRecovery(false)
+      }
+    }
+    loadRecovery()
   }, [opportunityId])
 
   return (
@@ -495,15 +523,39 @@ function OpportunityDetailModal({
                   )}
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-900">
-                    <span className="font-semibold">Recovery Decision Intelligence</span>
-                    <br />
-                    <span className="text-blue-800 text-xs">
-                      Phase 2: Risk analysis available in Risk Intelligence page. Recovery recommendations
-                      will be available in Phase 3.
-                    </span>
-                  </p>
+                {/* Recovery Intelligence Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Phase 3: Recovery Intelligence</h3>
+                  
+                  {loadingRecovery && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 text-sm">Loading recovery recommendations...</p>
+                    </div>
+                  )}
+
+                  {recoveryError && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-amber-900">
+                        <span className="font-semibold">Recovery data not available:</span> {recoveryError}
+                      </p>
+                    </div>
+                  )}
+
+                  {recovery && !loadingRecovery && (
+                    <div className="space-y-6">
+                      <RecoveryRecommendationCard
+                        recommendation={recovery}
+                        opportunityAmount={detail.amount}
+                      />
+
+                      {recoveryActions && (
+                        <RecoveryActionComparison
+                          candidates={recoveryActions.candidates}
+                          recommendedAction={recovery.recommended_action}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

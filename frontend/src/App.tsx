@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X } from 'lucide-react'
+import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Opportunities from './pages/Opportunities'
 import RiskIntelligence from './pages/RiskIntelligence'
+import RecoveryIntelligence from './pages/RecoveryIntelligence'
 import ActivityPage from './pages/Activity'
 import SettingsPage from './pages/Settings'
 
-type Page = 'dashboard' | 'opportunities' | 'risk' | 'activity' | 'settings'
+type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'activity' | 'settings'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
@@ -15,6 +16,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard' as Page, label: 'Dashboard', icon: BarChart3 },
     { id: 'risk' as Page, label: 'Risk Intelligence', icon: AlertTriangle },
+    { id: 'recovery' as Page, label: 'Recovery Intelligence', icon: Zap },
     { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp },
     { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity },
     { id: 'settings' as Page, label: 'Settings', icon: Settings },
@@ -75,7 +77,7 @@ export default function App() {
         <div className="p-4 border-t border-gray-800">
           {sidebarOpen && (
             <p className="text-xs text-gray-500">
-              Phase 2 - Risk Intelligence
+              Phase 3 - Recovery Intelligence
             </p>
           )}
         </div>
@@ -95,6 +97,7 @@ export default function App() {
           <div className="p-8">
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'risk' && <RiskIntelligence />}
+            {currentPage === 'recovery' && <RecoveryIntelligence />}
             {currentPage === 'opportunities' && <Opportunities />}
             {currentPage === 'activity' && <ActivityPage />}
             {currentPage === 'settings' && <SettingsPage />}
