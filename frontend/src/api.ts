@@ -195,4 +195,20 @@ export const api = {
 
   getGovernanceDashboard: () =>
     fetchJSON('/governance/dashboard'),
+
+  // Phase 6: Recovery Analytics & Optimization
+  getRecoveryFunnel: (days: number = 30) =>
+    fetchJSON(`/analytics/recovery/funnel?days=${days}`),
+
+  getStrategyPerformance: (strategy?: string) =>
+    fetchJSON(`/analytics/recovery/strategies${strategy ? `?strategy=${strategy}` : ''}`),
+
+  getCohortAnalysis: (cohortType: string) =>
+    fetchJSON(`/analytics/recovery/cohorts?cohort_type=${cohortType}`),
+
+  getIncrementalRevenue: (days: number = 30) =>
+    fetchJSON(`/analytics/recovery/incremental?days=${days}`),
+
+  getStrategyRecommendations: (opportunityType: string) =>
+    fetchJSON(`/analytics/recovery/recommendations?opportunity_type=${opportunityType}`),
 }

@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield } from 'lucide-react'
+import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield, LineChart } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Opportunities from './pages/Opportunities'
 import RiskIntelligence from './pages/RiskIntelligence'
 import RecoveryIntelligence from './pages/RecoveryIntelligence'
 import RecoveryControlCenter from './pages/RecoveryControlCenter'
 import { GovernancePage } from './pages/GovernancePage'
+import { RecoveryAnalyticsPage } from './pages/RecoveryAnalyticsPage'
 import ActivityPage from './pages/Activity'
 import SettingsPage from './pages/Settings'
 
-type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'control-center' | 'governance' | 'activity' | 'settings'
+type Page = 'dashboard' | 'opportunities' | 'risk' | 'recovery' | 'control-center' | 'governance' | 'analytics' | 'activity' | 'settings'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
@@ -20,6 +21,7 @@ export default function App() {
     { id: 'risk' as Page, label: 'Risk Intelligence', icon: AlertTriangle },
     { id: 'recovery' as Page, label: 'Recovery Intelligence', icon: Zap },
     { id: 'control-center' as Page, label: 'Recovery Control Center', icon: Gauge },
+    { id: 'analytics' as Page, label: 'Recovery Analytics', icon: LineChart },
     { id: 'governance' as Page, label: 'Governance & Safety', icon: Shield },
     { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp },
     { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity },
@@ -103,6 +105,7 @@ export default function App() {
             {currentPage === 'risk' && <RiskIntelligence />}
             {currentPage === 'recovery' && <RecoveryIntelligence />}
             {currentPage === 'control-center' && <RecoveryControlCenter />}
+            {currentPage === 'analytics' && <RecoveryAnalyticsPage />}
             {currentPage === 'governance' && <GovernancePage />}
             {currentPage === 'opportunities' && <Opportunities />}
             {currentPage === 'activity' && <ActivityPage />}

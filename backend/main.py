@@ -639,6 +639,8 @@ def get_recovery_control_center(db: Session = Depends(get_db)):
                 for w in active_workflows
             ],
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Phase 5: Governance & Safety
@@ -844,7 +846,103 @@ def get_governance_dashboard(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Phase 6: Recovery Measurement & Optimization
+
+@app.get("/api/analytics/recovery/funnel")
+def get_recovery_funnel(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db)):
+    """Get recovery funnel metrics."""
+    try:
+        from recovery_measurement import RecoveryMeasurement
+        measurement = RecoveryMeasurement(db)
+        return measurement.get_recovery_funnel(days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/recovery/strategies")
+def get_strategy_performance(strategy: Optional[str] = None, db: Session = Depends(get_db)):
+    """Get recovery strategy performance metrics."""
+    try:
+        from recovery_measurement import RecoveryMeasurement
+        measurement = RecoveryMeasurement(db)
+        if strategy:
+            return [measurement.get_strategy_performance(strategy)]
+        else:
+            # Get all strategies
+            from recovery_strategies import RecoveryActionType
+            results = []
+            for action in RecoveryActionType:
+                results.append(measurement.get_strategy_performance(action.value))
+            return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/recovery/cohorts")
+def get_cohort_analysis(
+    cohort_type: str = Query(..., description="payment_method|failure_reason|opportunity_type|customer_segment|risk_level"),
+    db: Session = Depends(get_db)
+):
+    """Get recovery performance by cohort."""
+    try:
+        from recovery_measurement import RecoveryMeasurement
+        from models import RecoveryOutcome
+        
+        measurement = RecoveryMeasurement(db)
+        
+        # Get unique cohort values
+        field_map = {
+            "payment_method": RecoveryOutcome.payment_method,
+            "failure_reason": RecoveryOutcome.failure_reason,
+            "opportunity_type": RecoveryOutcome.opportunity_type,
+            "customer_segment": RecoveryOutcome.customer_segment,
+            "risk_level": RecoveryOutcome.risk_level,
+        }
+        
+        field = field_map.get(cohort_type)
+        if not field:
+            raise HTTPException(status_code=400, detail=f"Unknown cohort type: {cohort_type}")
+        
+        values = db.query(field).distinct().filter(field != None).all()
+        
+        results = []
+        for (value,) in values:
+            results.append(measurement.get_cohort_performance(cohort_type, value))
+        
+        return results
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/recovery/incremental")
+def get_incremental_revenue(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db)):
+    """Get incremental revenue attribution."""
+    try:
+        from recovery_measurement import RecoveryMeasurement
+        measurement = RecoveryMeasurement(db)
+        return measurement.get_incremental_revenue_summary(days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/recovery/recommendations")
+def get_strategy_recommendations(
+    opportunity_type: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Get recommended strategies based on historical performance."""
+    try:
+        from recovery_measurement import RecoveryMeasurement
+        measurement = RecoveryMeasurement(db)
+        return measurement.get_strategy_recommendations(opportunity_type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
+
 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 
 class CustomerBase(BaseModel):
@@ -323,7 +323,7 @@ class RecoveryDashboardMetricsSchema(BaseModel):
 class PolicySchema(BaseModel):
     """A single governance policy."""
     policy_type: str
-    value: any
+    value: Any
     enabled: bool
     description: str
     editable: bool
@@ -432,5 +432,5 @@ class PauseResumeSchema(BaseModel):
 class PolicyUpdateSchema(BaseModel):
     """Request to update a policy."""
     policy_type: str
-    value: any
+    value: Any
     reason: Optional[str] = None

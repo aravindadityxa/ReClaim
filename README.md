@@ -88,6 +88,7 @@ ReClaim/
 │   ├── governance_service.py     # Policy enforcement engine
 │   ├── policy_rules.py           # Policy definitions
 │   ├── approval_service.py       # Approval workflow management
+│   ├── recovery_measurement.py   # Recovery outcome measurement and analytics
 │   ├── audit_service.py          # Audit trail logging
 │   ├── database.py               # Database configuration
 │   ├── seed.py                   # Seed data generation
@@ -102,7 +103,7 @@ ReClaim/
 │
 ├── frontend/                      # React + Vite frontend
 │   ├── src/
-│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety
+│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety, Recovery Analytics
 │   │   ├── components/          # Reusable UI components (Badge, Cards, Queue, etc.)
 │   │   ├── App.tsx              # Main app with navigation
 │   │   ├── api.ts               # API client
@@ -182,6 +183,15 @@ ReClaim/
 - **Policy Dashboard**: View and manage merchant policies
 - **Governance Audit**: Complete audit of all policy decisions
 
+### Recovery Analytics & Optimization
+- **Recovery Funnel**: Track opportunities through detection → recovery → success
+- **Strategy Performance**: Measure effectiveness of each recovery action across all dimensions
+- **Cohort Analysis**: Analyze recovery performance by payment method, failure reason, customer segment
+- **Incremental Revenue Attribution**: Measure true incremental revenue from recovery efforts
+- **Strategy Recommendations**: ML-driven recommendations based on historical performance
+- **Learning System**: Continuous improvement from recovery outcome data
+- **Real-time Dashboards**: Interactive analytics with funnel, strategy, cohort, and incremental revenue views
+
 ## API Endpoints
 
 ### Revenue Endpoints
@@ -234,6 +244,15 @@ POST /api/governance/approvals/{id}/reject   # Reject request
 POST /api/governance/pause                # Pause all recovery execution
 POST /api/governance/resume               # Resume recovery execution
 GET  /api/governance/dashboard            # Governance dashboard summary
+```
+
+### Recovery Analytics & Optimization Endpoints
+```
+GET  /api/analytics/recovery/funnel?days=30           # Recovery funnel metrics
+GET  /api/analytics/recovery/strategies?strategy=...  # Strategy performance
+GET  /api/analytics/recovery/cohorts?cohort_type=...  # Cohort analysis
+GET  /api/analytics/recovery/incremental?days=30      # Incremental revenue
+GET  /api/analytics/recovery/recommendations?opportunity_type=...  # Strategy recommendations
 ```
 
 ## Database
@@ -355,6 +374,11 @@ Audit Trail (Complete record)
 - Comprehensive audit trail
 - Backend policy enforcement (no frontend bypass)
 - Razorpay Test Mode integration
+- Recovery measurement and outcome tracking
+- Recovery analytics with funnel, strategy, and cohort analysis
+- Incremental revenue attribution engine
+- Strategy performance recommendations based on historical data
+- Learning system for continuous improvement
 
 ## Environment Variables
 

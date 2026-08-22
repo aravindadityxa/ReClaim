@@ -154,6 +154,52 @@ class RecoveryExecution(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+# Phase 6: Recovery Outcome Tracking & Measurement
+
+class RecoveryOutcome(Base):
+    """Phase 6: Track recovery outcome for learning and optimization."""
+    __tablename__ = "recovery_outcomes"
+
+    id = Column(String, primary_key=True, index=True)
+    opportunity_id = Column(String, ForeignKey("revenue_opportunities.id"), index=True)
+    recovery_execution_id = Column(String, ForeignKey("recovery_executions.id"), nullable=True)
+    action_type = Column(String, index=True)
+    
+    # Initial metrics
+    amount_at_risk = Column(Float)
+    expected_recovery = Column(Float, nullable=True)
+    expected_recovery_probability = Column(Float, nullable=True)
+    
+    # Outcome
+    outcome_status = Column(String, index=True)  # SUCCEEDED, FAILED, ABANDONED, PARTIAL
+    recovered_amount = Column(Float, default=0)
+    
+    # Attribution
+    estimated_incremental_revenue = Column(Float, nullable=True)
+    attribution_method = Column(String, nullable=True)  # DETERMINISTIC, MODEL, HEURISTIC
+    
+    # Context
+    customer_id = Column(String, ForeignKey("customers.id"), index=True)
+    failure_reason = Column(String, nullable=True)
+    payment_method = Column(String, nullable=True)
+    opportunity_type = Column(String, nullable=True)
+    customer_segment = Column(String, nullable=True)
+    risk_level = Column(String, nullable=True)
+    
+    # Performance
+    attempts = Column(Integer, default=1)
+    time_to_recovery = Column(Integer, nullable=True)  # seconds
+    friction_score = Column(Float, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, index=True, default=datetime.utcnow)
+    outcome_recorded_at = Column(DateTime, nullable=True)
+    
+    opportunity = relationship("RevenueOpportunity")
+    customer = relationship("Customer")
+    execution = relationship("RecoveryExecution")
+
+
 class ApprovalRequestStatus(str, enum.Enum):
     """Phase 5: Status of an approval request."""
     PENDING = "PENDING"
