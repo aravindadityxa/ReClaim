@@ -1,6 +1,6 @@
 # ReClaim - Intelligent Revenue Recovery & Intelligence Platform
 
-An AI-powered Revenue Recovery & Intelligence Platform for the Razorpay Buildathon.
+An AI-powered Revenue Recovery & Intelligence Platform
 
 ## Overview
 
