@@ -16,6 +16,8 @@ import {
   RecoveryRecommendation,
   RecoveryActionComparison,
   GovernanceStatus,
+  GovernancePoliciesResponse,
+  ApprovalsListResponse,
   SystemHealthResponse,
   OperationalMetrics,
   SystemErrorResponse,
@@ -192,7 +194,7 @@ export const api = {
 
   // Phase 5: Governance & Safety
   getGovernancePolicies: () =>
-    fetchJSON('/governance/policies'),
+    fetchJSON<GovernancePoliciesResponse>('/governance/policies'),
 
   updateGovernancePolicy: (policyType: string, update: { value: any }) =>
     fetchJSON(`/governance/policies/${policyType}`, {
@@ -207,7 +209,7 @@ export const api = {
     }),
 
   getApprovals: (status?: string) =>
-    fetchJSON(`/governance/approvals${status ? `?status=${status}` : ''}`),
+    fetchJSON<ApprovalsListResponse>(`/governance/approvals${status ? `?status=${status}` : ''}`),
 
   getApproval: (requestId: string) =>
     fetchJSON(`/governance/approvals/${requestId}`),

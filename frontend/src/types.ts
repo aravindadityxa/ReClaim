@@ -235,6 +235,36 @@ export interface RecoveryPortfolioMetrics {
 
 // Phase 5: Governance & Safety
 
+export interface GovernancePolicy {
+  policy_type: string
+  value: any
+  enabled: boolean
+  description: string
+  editable: boolean
+}
+
+export interface GovernancePoliciesResponse {
+  policies: Record<string, GovernancePolicy>
+}
+
+export interface ApprovalRequestResponse {
+  id: string
+  opportunity_id: string
+  action_type: string
+  amount: number
+  expected_value: number
+  recovery_probability: number
+  reason: string
+  status: string
+  requested_at: string
+  reviewed_at?: string
+  reviewer_note?: string
+}
+
+export interface ApprovalsListResponse {
+  pending_requests: ApprovalRequestResponse[]
+}
+
 export interface GovernanceStatus {
   is_paused: boolean
   autonomous_actions_today: number

@@ -123,7 +123,7 @@ export const GovernancePage: React.FC = () => {
     }
   };
 
-  if (loading && !policies.policy_type) {
+  if (loading && !Object.keys(policies).length) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
         <div className="text-white text-center">
