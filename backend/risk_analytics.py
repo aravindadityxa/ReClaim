@@ -19,6 +19,8 @@ class RiskAnalytics:
         self.risk_model = RiskModel()
         self.feature_engine = RiskFeatureEngine()
         self.scorer = RiskScorer()
+        self._features_cache = None  # Cache features within a request
+        self._features_cache_db_id = None  # Track which db session this was built for
         self._ensure_model_trained()
 
     def _ensure_model_trained(self):
@@ -30,6 +32,14 @@ class RiskAnalytics:
             df = self.feature_engine.build_opportunity_features(self.db)
             if len(df) > 0:
                 self.risk_model.train(df)
+
+    def _get_cached_features(self) -> any:
+        """Get cached features for current db session. Rebuilds if session changed."""
+        # If db session changed, invalidate cache
+        if self._features_cache is None or self._features_cache_db_id != id(self.db):
+            self._features_cache = self.feature_engine.build_opportunity_features(self.db)
+            self._features_cache_db_id = id(self.db)
+        return self._features_cache
 
     def compute_opportunity_risk(self, opportunity_id: str) -> Dict:
         """
@@ -53,8 +63,8 @@ class RiskAnalytics:
         if not opp:
             return None
 
-        # Build features for this opportunity
-        df = self.feature_engine.build_opportunity_features(self.db)
+        # Use cached features instead of rebuilding for each opportunity
+        df = self._get_cached_features()
         opp_row = df[df['opportunity_id'] == opportunity_id]
 
         if opp_row.empty:

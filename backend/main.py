@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 from database import get_db, init_db, SessionLocal
 from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability, User, UserRole
@@ -24,6 +25,13 @@ from auth_service import (
 
 app = FastAPI(title="ReClaim Revenue Command Center")
 
+# Thread pool for parallelizing independent database queries
+_query_executor = ThreadPoolExecutor(max_workers=4)
+
+# Global cache for expensive instances to avoid reinitializing on every request
+_risk_analytics_cache = {}
+_recovery_analytics_cache = {}
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +40,61 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def clear_analytics_cache(request: Request, call_next):
+    """Clear analytics feature caches after each request."""
+    try:
+        response = await call_next(request)
+    finally:
+        # Clear cached features to prevent stale data on next request
+        if 'instance' in _risk_analytics_cache:
+            _risk_analytics_cache['instance']._features_cache = None
+            _risk_analytics_cache['instance']._features_cache_db_id = None
+        if 'instance' in _recovery_analytics_cache:
+            _recovery_analytics_cache['instance']._metrics_cache = None
+    return response
+
+
+# ============================================================================
+# Analytics Dependency Injection
+# ============================================================================
+
+def get_risk_analytics(db: Session = Depends(get_db)):
+    """Get cached RiskAnalytics instance for this request.
+    
+    Reuses the same RiskAnalytics instance within a request to avoid:
+    - Redundant ML model loading from disk
+    - Redundant feature engineering
+    - Redundant database queries for the same opportunity set
+    """
+    if 'instance' not in _risk_analytics_cache:
+        from risk_analytics import RiskAnalytics
+        _risk_analytics_cache['instance'] = RiskAnalytics(db)
+    else:
+        # Update db session for this request
+        analytics = _risk_analytics_cache['instance']
+        analytics.db = db
+    return _risk_analytics_cache['instance']
+
+
+def get_recovery_analytics(db: Session = Depends(get_db)):
+    """Get cached RecoveryAnalytics instance for this request.
+    
+    Reuses the same RecoveryAnalytics instance within a request to avoid:
+    - Redundant strategy initialization
+    - Redundant recovery calculations
+    - Redundant database queries
+    """
+    if 'instance' not in _recovery_analytics_cache:
+        from recovery_analytics import RecoveryAnalytics
+        _recovery_analytics_cache['instance'] = RecoveryAnalytics(db)
+    else:
+        # Update db session for this request
+        analytics = _recovery_analytics_cache['instance']
+        analytics.db = db
+    return _recovery_analytics_cache['instance']
 
 
 # ============================================================================
@@ -469,24 +532,30 @@ def activate_user(
 
 @app.get("/api/dashboard/revenue-summary", response_model=DashboardSummary)
 def get_revenue_summary(db: Session = Depends(get_db)):
-    """Get dashboard revenue summary metrics."""
+    """Get dashboard revenue summary metrics. Queries run in parallel."""
     try:
-        total = RevenueAnalytics.get_total_revenue(db)
-        at_risk = RevenueAnalytics.get_revenue_at_risk(db)
-        recoverable = RevenueAnalytics.get_estimated_recoverable(db)
-        recovered = RevenueAnalytics.get_recovered_revenue(db)
-        counts = RevenueAnalytics.get_opportunity_count(db)
-        health = RevenueAnalytics.get_revenue_health(db)
-        success_rate = RevenueAnalytics.get_payment_success_rate(db)
+        # Run independent queries in parallel
+        futures = {
+            'total': _query_executor.submit(RevenueAnalytics.get_total_revenue, db),
+            'at_risk': _query_executor.submit(RevenueAnalytics.get_revenue_at_risk, db),
+            'recoverable': _query_executor.submit(RevenueAnalytics.get_estimated_recoverable, db),
+            'recovered': _query_executor.submit(RevenueAnalytics.get_recovered_revenue, db),
+            'counts': _query_executor.submit(RevenueAnalytics.get_opportunity_count, db),
+            'health': _query_executor.submit(RevenueAnalytics.get_revenue_health, db),
+            'success_rate': _query_executor.submit(RevenueAnalytics.get_payment_success_rate, db),
+        }
+        
+        # Collect results
+        results = {key: future.result() for key, future in futures.items()}
         
         return DashboardSummary(
-            total_revenue=total,
-            revenue_at_risk=at_risk,
-            estimated_recoverable=recoverable,
-            recovered_revenue=recovered,
-            opportunity_count=counts,
-            health=health,
-            payment_success_rate=success_rate
+            total_revenue=results['total'],
+            revenue_at_risk=results['at_risk'],
+            estimated_recoverable=results['recoverable'],
+            recovered_revenue=results['recovered'],
+            opportunity_count=results['counts'],
+            health=results['health'],
+            payment_success_rate=results['success_rate']
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -494,11 +563,19 @@ def get_revenue_summary(db: Session = Depends(get_db)):
 
 @app.get("/api/dashboard/revenue-trend", response_model=DashboardTrend)
 def get_revenue_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(get_db)):
-    """Get revenue trend for dashboard."""
+    """Get revenue trend for dashboard. Queries run in parallel."""
     try:
-        trend = RevenueAnalytics.get_revenue_trend(db, days)
-        risk_breakdown = RevenueAnalytics.get_risk_breakdown(db)
-        risk_trend = RevenueAnalytics.get_risk_trend(db, days)
+        # Run independent queries in parallel
+        futures = {
+            'trend': _query_executor.submit(RevenueAnalytics.get_revenue_trend, db, days),
+            'risk_breakdown': _query_executor.submit(RevenueAnalytics.get_risk_breakdown, db),
+            'risk_trend': _query_executor.submit(RevenueAnalytics.get_risk_trend, db, days),
+        }
+        
+        # Collect results
+        trend = futures['trend'].result()
+        risk_breakdown = futures['risk_breakdown'].result()
+        risk_trend = futures['risk_trend'].result()
         
         trend_points = [RevenueTrendPoint(**point) for point in trend]
         
@@ -614,11 +691,9 @@ def get_revenue_activity(
 # Phase 2: Risk Intelligence APIs
 
 @app.get("/api/risk/summary", response_model=RiskSummary)
-def get_risk_summary(db: Session = Depends(get_db)):
+def get_risk_summary(risk_analytics = Depends(get_risk_analytics)):
     """Get aggregated risk intelligence summary."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         summary = risk_analytics.get_risk_summary()
         return summary
     except Exception as e:
@@ -626,11 +701,9 @@ def get_risk_summary(db: Session = Depends(get_db)):
 
 
 @app.get("/api/risk/queue")
-def get_risk_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def get_risk_queue(limit: int = Query(20, ge=1, le=100), risk_analytics = Depends(get_risk_analytics)):
     """Get prioritized revenue risk queue."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         queue = risk_analytics.get_risk_queue(limit)
         return queue
     except Exception as e:
@@ -638,11 +711,9 @@ def get_risk_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depends(g
 
 
 @app.get("/api/risk/drivers")
-def get_risk_drivers(db: Session = Depends(get_db)):
+def get_risk_drivers(risk_analytics = Depends(get_risk_analytics)):
     """Get risk breakdown by driver."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         drivers = risk_analytics.get_risk_drivers_breakdown()
         return drivers
     except Exception as e:
@@ -652,12 +723,10 @@ def get_risk_drivers(db: Session = Depends(get_db)):
 @app.get("/api/risk/cohort")
 def get_cohort_risk(
     dimension: str = Query("payment_method", regex="^(payment_method|failure_reason|opportunity_type)$"),
-    db: Session = Depends(get_db)
+    risk_analytics = Depends(get_risk_analytics)
 ):
     """Get risk breakdown by cohort."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         cohorts = risk_analytics.get_cohort_risk(dimension)
         return cohorts
     except Exception as e:
@@ -665,11 +734,9 @@ def get_cohort_risk(
 
 
 @app.get("/api/risk/trend")
-def get_risk_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(get_db)):
+def get_risk_trend(days: int = Query(30, ge=7, le=365), risk_analytics = Depends(get_risk_analytics)):
     """Get risk trend over time."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         trend = risk_analytics.get_risk_trend(days)
         return trend
     except Exception as e:
@@ -677,11 +744,9 @@ def get_risk_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(ge
 
 
 @app.get("/api/risk/spike")
-def detect_risk_spike(days: int = Query(7, ge=1, le=30), db: Session = Depends(get_db)):
+def detect_risk_spike(days: int = Query(7, ge=1, le=30), risk_analytics = Depends(get_risk_analytics)):
     """Detect revenue risk spikes."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         spike = risk_analytics.detect_risk_spikes(days)
         return spike
     except Exception as e:
@@ -689,11 +754,9 @@ def detect_risk_spike(days: int = Query(7, ge=1, le=30), db: Session = Depends(g
 
 
 @app.get("/api/risk/opportunities/{opportunity_id}")
-def get_opportunity_risk(opportunity_id: str, db: Session = Depends(get_db)):
+def get_opportunity_risk(opportunity_id: str, risk_analytics = Depends(get_risk_analytics)):
     """Get risk analysis for a specific opportunity."""
     try:
-        from risk_analytics import RiskAnalytics
-        risk_analytics = RiskAnalytics(db)
         risk = risk_analytics.compute_opportunity_risk(opportunity_id)
         
         if not risk:
@@ -707,13 +770,9 @@ def get_opportunity_risk(opportunity_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/api/risk/model-performance")
-def get_model_performance(db: Session = Depends(get_db)):
+def get_model_performance(risk_analytics = Depends(get_risk_analytics)):
     """Get risk model performance metrics."""
     try:
-        from risk_analytics import RiskAnalytics
-        from risk_model import RiskModel
-        
-        risk_analytics = RiskAnalytics(db)
         model = risk_analytics.risk_model
         
         if not model.metadata:
@@ -823,14 +882,10 @@ def get_recovery_action_comparison(opportunity_id: str, db: Session = Depends(ge
 
 
 @app.get("/api/recovery/portfolio", response_model=RecoveryPortfolioMetricsSchema)
-def get_recovery_portfolio_metrics(db: Session = Depends(get_db)):
+def get_recovery_portfolio_metrics(recovery_analytics = Depends(get_recovery_analytics)):
     """Get aggregated recovery metrics for merchant portfolio."""
     try:
-        from recovery_analytics import RecoveryAnalytics as RecoveryAnalyticsEngine
-        
-        analytics = RecoveryAnalyticsEngine(db)
-        metrics = analytics.get_portfolio_metrics()
-        
+        metrics = recovery_analytics.get_portfolio_metrics()
         return metrics
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -851,14 +906,10 @@ def get_recovery_dashboard_metrics(db: Session = Depends(get_db)):
 
 
 @app.get("/api/recovery/queue")
-def get_recovery_queue(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def get_recovery_queue(limit: int = Query(20, ge=1, le=100), recovery_analytics = Depends(get_recovery_analytics)):
     """Get top recovery opportunities ranked by expected value."""
     try:
-        from recovery_analytics import RecoveryAnalytics as RecoveryAnalyticsEngine
-        
-        analytics = RecoveryAnalyticsEngine(db)
-        queue = analytics.get_recovery_queue(limit)
-        
+        queue = recovery_analytics.get_recovery_queue(limit)
         return queue
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
