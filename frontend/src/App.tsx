@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield, LineChart, Cpu, LogOut, User } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { BarChart3, TrendingUp, Activity, Settings, AlertTriangle, Menu, X, Zap, Gauge, Shield, LineChart, Cpu, LogOut, User, ChevronDown } from 'lucide-react'
 import { useAuthContext } from './context/AuthContext'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Opportunities from './pages/Opportunities'
 import RiskIntelligence from './pages/RiskIntelligence'
@@ -20,26 +21,35 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Show loading state while checking auth
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600 text-sm">Loading...</p>
+        </div>
       </div>
     )
   }
 
-  // If not authenticated, show message (this should be handled by routing in a real app)
+  // If not authenticated, show Login page
   if (!currentUser) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please log in to access ReClaim</p>
-          <p className="text-sm text-gray-500">Redirecting to login...</p>
-        </div>
-      </div>
-    )
+    return <Login />
   }
 
   const navItems = [
@@ -59,12 +69,14 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await logout()
-      // In a real app with React Router, this would navigate to /login
-      window.location.href = '/login'
+      // Redirect to login after logout
+      window.location.href = '/'
     } catch (err) {
       console.error('Logout failed:', err)
     }
   }
+
+  const currentPageLabel = navItems.find((item) => item.id === currentPage)?.label || 'Dashboard'
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -72,74 +84,73 @@ export default function App() {
       <div
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-primary text-white transition-all duration-300 flex flex-col border-r border-gray-800`}
+        } bg-slate-900 text-white transition-all duration-300 flex flex-col border-r border-slate-700`}
       >
-        {/* Header */}
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center justify-between">
-            {sidebarOpen && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <BarChart3 size={20} />
-                </div>
-                <h1 className="text-xl font-bold">ReClaim</h1>
-              </div>
-            )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1 hover:bg-gray-800 rounded"
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+        {/* Logo */}
+        <div className="h-16 flex items-center px-4 border-b border-slate-700">
+          <div className="flex items-center gap-3 w-full">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BarChart3 size={18} />
+            </div>
+            {sidebarOpen && <h1 className="text-lg font-bold truncate">ReClaim</h1>}
           </div>
+          {sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="ml-auto p-1 hover:bg-slate-800 rounded-lg transition"
+              title="Collapse sidebar"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = currentPage === item.id
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const isActive = currentPage === item.id
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
-              >
-                <Icon size={20} />
-                {sidebarOpen && <span className="font-medium">{item.label}</span>}
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setCurrentPage(item.id)
+                    setShowUserMenu(false)
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                  title={!sidebarOpen ? item.label : undefined}
+                >
+                  <Icon size={18} className="flex-shrink-0" />
+                  {sidebarOpen && <span className="truncate">{item.label}</span>}
+                </button>
+              )
+            })}
+          </div>
         </nav>
 
-        {/* User Profile Section */}
-        <div className="p-4 border-t border-gray-800">
+        {/* Footer */}
+        <div className="border-t border-slate-700 p-3">
           {sidebarOpen ? (
-            <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{currentUser.username}</p>
-                <p className="text-xs text-gray-400 truncate">{currentUser.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="ml-2 p-1 hover:bg-gray-700 rounded transition"
-                title="Logout"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-1 hover:bg-slate-800 rounded-lg transition w-full flex justify-center"
+              title="Collapse sidebar"
+            >
+              <Menu size={18} />
+            </button>
           ) : (
             <button
-              onClick={handleLogout}
-              className="w-full p-2 hover:bg-gray-800 rounded transition"
-              title="Logout"
+              onClick={() => setSidebarOpen(true)}
+              className="p-1 hover:bg-slate-800 rounded-lg transition w-full flex justify-center"
+              title="Expand sidebar"
             >
-              <LogOut size={18} />
+              <Menu size={18} />
             </button>
           )}
         </div>
@@ -147,19 +158,81 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {navItems.find((item) => item.id === currentPage)?.label}
-          </h2>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{currentUser.username}</p>
-              <p className="text-xs text-gray-500">{currentUser.role}</p>
-            </div>
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-              {currentUser.username.substring(0, 1).toUpperCase()}
-            </div>
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-gray-900">{currentPageLabel}</h2>
+
+          {/* User Profile Dropdown */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-lg transition"
+            >
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">{currentUser.username}</p>
+                <p className="text-xs text-gray-500">{currentUser.role}</p>
+              </div>
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                {currentUser.username.substring(0, 1).toUpperCase()}
+              </div>
+              <ChevronDown size={18} className="text-gray-500" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                {/* Profile Info */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{currentUser.username}</p>
+                  <p className="text-xs text-gray-500 mt-1">{currentUser.role}</p>
+                  {currentUser.permissions && currentUser.permissions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {currentUser.permissions.slice(0, 3).map((perm) => (
+                        <span
+                          key={perm}
+                          className="inline-block px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
+                        >
+                          {perm}
+                        </span>
+                      ))}
+                      {currentUser.permissions.length > 3 && (
+                        <span className="inline-block text-xs text-gray-500">
+                          +{currentUser.permissions.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setCurrentPage('settings')
+                      setShowUserMenu(false)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </button>
+                </div>
+
+                {/* Logout */}
+                <div className="border-t border-gray-100 py-1">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      handleLogout()
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 transition flex items-center gap-2"
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
