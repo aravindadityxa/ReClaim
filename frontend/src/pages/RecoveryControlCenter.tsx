@@ -35,13 +35,8 @@ export default function RecoveryControlCenter() {
         setError(null)
 
         // Load control center data
-        setData({
-          active_workflows: 0,
-          completed_workflows: 0,
-          recent_attempts_count: 0,
-          total_attempts: 0,
-          active_summary: [],
-        })
+        const controlCenterData = await api.getRecoveryControlCenter()
+        setData(controlCenterData)
 
         // Load governance status
         try {

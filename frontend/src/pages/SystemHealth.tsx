@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Activity, AlertCircle, CheckCircle, AlertTriangle, RefreshCw,
   Database, Zap, Shield, Gauge, TrendingUp, Clock, XCircle
@@ -16,16 +16,7 @@ export const SystemHealth: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
-  useEffect(() => {
-    loadData()
-    
-    if (autoRefresh) {
-      const interval = setInterval(loadData, 10000)
-      return () => clearInterval(interval)
-    }
-  }, [autoRefresh])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -44,7 +35,16 @@ export const SystemHealth: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+    
+    if (autoRefresh) {
+      const interval = setInterval(loadData, 10000)
+      return () => clearInterval(interval)
+    }
+  }, [autoRefresh, loadData])
 
   const getStatusColor = (status: string) => {
     switch (status) {

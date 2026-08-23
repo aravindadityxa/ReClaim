@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 
-from database import get_db, init_db
+from database import get_db, init_db, SessionLocal
 from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability, User, UserRole
 from business_logic import RevenueAnalytics
 from schemas import (
@@ -18,7 +18,8 @@ from schemas import (
 from config import FRONTEND_URL, BACKEND_PORT
 from auth_service import (
     authenticate_user, create_user, verify_token, get_user_by_id,
-    get_user_permissions, has_permission, log_security_event
+    get_user_permissions, has_permission, log_security_event, create_access_token,
+    get_user_by_username
 )
 
 app = FastAPI(title="ReClaim Revenue Command Center")
@@ -94,10 +95,6 @@ def startup():
         print(f"Error creating default admin user: {e}")
     finally:
         db.close()
-
-
-from auth_service import get_user_by_username
-from database import SessionLocal
 
 
 @app.get("/health")

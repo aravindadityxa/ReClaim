@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Lock, Shield, AlertTriangle, CheckCircle, Clock, XCircle,
-  Settings, Zap, PauseCircle, PlayCircle, FileText, Trash2
+  Settings, Zap, PauseCircle, PlayCircle
 } from 'lucide-react';
 import { api } from '../api';
 

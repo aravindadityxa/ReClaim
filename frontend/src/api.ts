@@ -171,25 +171,25 @@ export const api = {
     fetchJSON<RecoveryActionComparison>(`/recovery/actions/${opportunityId}`),
 
   // Phase 4: Agentic Recovery Engine
-  createRecoveryWorkflow: (opportunityId: string) =>
+  createRecoveryWorkflow: (opportunityId: string): Promise<any> =>
     fetchJSON('/recovery/workflows/' + opportunityId, { method: 'POST' }),
 
-  planRecoveryWorkflow: (opportunityId: string) =>
+  planRecoveryWorkflow: (opportunityId: string): Promise<any> =>
     fetchJSON(`/recovery/workflows/${opportunityId}/plan`, { method: 'POST' }),
 
-  validateRecoveryWorkflow: (opportunityId: string) =>
+  validateRecoveryWorkflow: (opportunityId: string): Promise<any> =>
     fetchJSON(`/recovery/workflows/${opportunityId}/validate`, { method: 'POST' }),
 
-  executeRecoveryAction: (opportunityId: string, isSimulation: boolean = true) =>
+  executeRecoveryAction: (opportunityId: string, isSimulation: boolean = true): Promise<any> =>
     fetchJSON(`/recovery/workflows/${opportunityId}/execute?is_simulation=${isSimulation}`, { method: 'POST' }),
 
-  getRecoveryWorkflow: (opportunityId: string) =>
+  getRecoveryWorkflow: (opportunityId: string): Promise<any> =>
     fetchJSON(`/recovery/workflows/${opportunityId}`),
 
-  getRecoveryAudit: (opportunityId: string) =>
+  getRecoveryAudit: (opportunityId: string): Promise<any> =>
     fetchJSON(`/recovery/workflows/${opportunityId}/audit`),
 
-  getRecoveryControlCenter: () =>
+  getRecoveryControlCenter: (): Promise<any> =>
     fetchJSON('/recovery/control-center'),
 
   // Phase 5: Governance & Safety
@@ -202,7 +202,7 @@ export const api = {
       body: JSON.stringify(update),
     }),
 
-  evaluateGovernance: (evaluation: any) =>
+  evaluateGovernance: (evaluation: any): Promise<any> =>
     fetchJSON('/governance/evaluate', {
       method: 'POST',
       body: JSON.stringify(evaluation),
@@ -239,19 +239,19 @@ export const api = {
     fetchJSON<GovernanceStatus>('/governance/dashboard'),
 
   // Phase 6: Recovery Analytics & Optimization
-  getRecoveryFunnel: (days: number = 30) =>
+  getRecoveryFunnel: (days: number = 30): Promise<any> =>
     fetchJSON(`/analytics/recovery/funnel?days=${days}`),
 
-  getStrategyPerformance: (strategy?: string) =>
+  getStrategyPerformance: (strategy?: string): Promise<any> =>
     fetchJSON(`/analytics/recovery/strategies${strategy ? `?strategy=${strategy}` : ''}`),
 
-  getCohortAnalysis: (cohortType: string) =>
+  getCohortAnalysis: (cohortType: string): Promise<any> =>
     fetchJSON(`/analytics/recovery/cohorts?cohort_type=${cohortType}`),
 
-  getIncrementalRevenue: (days: number = 30) =>
+  getIncrementalRevenue: (days: number = 30): Promise<any> =>
     fetchJSON(`/analytics/recovery/incremental?days=${days}`),
 
-  getStrategyRecommendations: (opportunityType: string) =>
+  getStrategyRecommendations: (opportunityType: string): Promise<any> =>
     fetchJSON(`/analytics/recovery/recommendations?opportunity_type=${opportunityType}`),
 
   // Production Reliability & Observability

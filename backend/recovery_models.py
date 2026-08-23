@@ -3,7 +3,6 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from datetime import datetime
-from recovery_strategies import RecoveryActionType
 
 
 class RecoveryActionCandidate(BaseModel):
