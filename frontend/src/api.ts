@@ -16,6 +16,7 @@ import {
   RecoveryRecommendation,
   RecoveryActionComparison,
   GovernanceStatus,
+  GovernancePolicy,
   GovernancePoliciesResponse,
   ApprovalsListResponse,
   SystemHealthResponse,
@@ -196,13 +197,13 @@ export const api = {
   getGovernancePolicies: () =>
     fetchJSON<GovernancePoliciesResponse>('/governance/policies'),
 
-  updateGovernancePolicy: (policyType: string, update: { value: any }) =>
+  updateGovernancePolicy: (policyType: string, update: { value: string | number | boolean }) =>
     fetchJSON(`/governance/policies/${policyType}`, {
       method: 'PUT',
       body: JSON.stringify(update),
     }),
 
-  evaluateGovernance: (evaluation: any): Promise<any> =>
+  evaluateGovernance: (evaluation: { policies?: Record<string, GovernancePolicy> }): Promise<GovernanceStatus> =>
     fetchJSON('/governance/evaluate', {
       method: 'POST',
       body: JSON.stringify(evaluation),

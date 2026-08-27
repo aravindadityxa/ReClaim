@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, Any
 
@@ -107,8 +107,7 @@ class RiskOpportunityInfo(BaseModel):
     model_info: dict
     computed_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class RiskSummary(BaseModel):
@@ -119,6 +118,8 @@ class RiskSummary(BaseModel):
     most_common_risk_driver: Optional[str] = None
     critical_opportunity_count: int
     model_performance_f1: float
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class RiskDriverBreakdown(BaseModel):
@@ -165,6 +166,8 @@ class ModelPerformance(BaseModel):
     roc_auc: float
     confusion_matrix: list
     dataset_info: dict
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 # Phase 3: Recovery Intelligence

@@ -12,18 +12,36 @@ export default function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12">
-      <AlertCircle size={48} className="text-red-600 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 text-center max-w-md mb-4">{message}</p>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="button-primary"
-        >
-          Try Again
-        </button>
-      )}
+    <div className="min-h-[400px] flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
+      <div className="flex flex-col items-center justify-center max-w-md">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+          <AlertCircle size={32} style={{ color: 'var(--color-danger)' }} />
+        </div>
+        <h3 className="text-lg font-semibold mb-2 text-center" style={{ color: 'var(--color-text-primary)' }}>
+          {title}
+        </h3>
+        <p className="text-center mb-6" style={{ color: 'var(--color-text-secondary)' }}>
+          {message}
+        </p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="px-6 py-2 rounded-lg font-medium transition-all"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: 'var(--color-text-inverse)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--color-accent-hover)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--color-accent)'
+            }}
+          >
+            Try Again
+          </button>
+        )}
+      </div>
     </div>
   )
 }

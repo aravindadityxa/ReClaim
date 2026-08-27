@@ -38,6 +38,22 @@ class RecoveryAnalytics:
         if not at_risk_opps:
             return self._empty_portfolio_metrics()
         
+        # Pre-fetch all customer histories in one query instead of per opportunity (N+1 optimization)
+        customer_ids = set(opp.customer_id for opp in at_risk_opps)
+        all_customer_opps = self.db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.customer_id.in_(list(customer_ids))
+        ).all() if customer_ids else []
+        
+        # Build customer history cache
+        customer_histories = {}
+        for cust_id in customer_ids:
+            cust_opps = [o for o in all_customer_opps if o.customer_id == cust_id]
+            recovered_count = len([o for o in cust_opps if o.status == OpportunityStatus.RECOVERED])
+            customer_histories[cust_id] = {
+                "recovery_rate": recovered_count / len(cust_opps) if cust_opps else 0.5,
+                "total_value": sum(o.amount for o in cust_opps) if cust_opps else 0,
+            }
+        
         # Get recommendations for all opportunities
         recommendations = []
         total_contacts = 0
@@ -47,16 +63,11 @@ class RecoveryAnalytics:
             # Get risk info
             risk_info = self.risk_analytics.compute_opportunity_risk(opp.id)
             
-            # Get customer history
-            customer_opps = self.db.query(RevenueOpportunity).filter(
-                RevenueOpportunity.customer_id == opp.customer_id
-            ).all()
-            
-            recovered_count = len([o for o in customer_opps if o.status == OpportunityStatus.RECOVERED])
-            customer_history = {
-                "recovery_rate": recovered_count / len(customer_opps) if customer_opps else 0.5,
-                "total_value": sum(o.amount for o in customer_opps) if customer_opps else 0,
-            }
+            # Use cached customer history
+            customer_history = customer_histories.get(opp.customer_id, {
+                "recovery_rate": 0.5,
+                "total_value": 0,
+            })
             
             # Get recommendation
             try:
@@ -136,21 +147,33 @@ class RecoveryAnalytics:
             RevenueOpportunity.status.in_([OpportunityStatus.AT_RISK, OpportunityStatus.RECOVERABLE])
         ).all()
         
+        # Pre-fetch all customer opportunities to avoid N+1 queries
+        customer_ids = set(opp.customer_id for opp in at_risk_opps)
+        all_customer_opps = self.db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.customer_id.in_(list(customer_ids))
+        ).all() if customer_ids else []
+        
+        # Build customer history cache
+        customer_histories = {}
+        for cust_id in customer_ids:
+            cust_opps = [o for o in all_customer_opps if o.customer_id == cust_id]
+            recovered_count = len([o for o in cust_opps if o.status == OpportunityStatus.RECOVERED])
+            customer_histories[cust_id] = {
+                "recovery_rate": recovered_count / len(cust_opps) if cust_opps else 0.5,
+                "total_value": sum(o.amount for o in cust_opps) if cust_opps else 0,
+            }
+        
         opportunities = []
         
         for opp in at_risk_opps:
             try:
                 risk_info = self.risk_analytics.compute_opportunity_risk(opp.id)
                 
-                customer_opps = self.db.query(RevenueOpportunity).filter(
-                    RevenueOpportunity.customer_id == opp.customer_id
-                ).all()
-                
-                recovered_count = len([o for o in customer_opps if o.status == OpportunityStatus.RECOVERED])
-                customer_history = {
-                    "recovery_rate": recovered_count / len(customer_opps) if customer_opps else 0.5,
-                    "total_value": sum(o.amount for o in customer_opps) if customer_opps else 0,
-                }
+                # Use cached customer history instead of querying
+                customer_history = customer_histories.get(opp.customer_id, {
+                    "recovery_rate": 0.5,
+                    "total_value": 0,
+                })
                 
                 rec = self.recovery_engine.get_recommendation(opp, risk_info, customer_history)
                 

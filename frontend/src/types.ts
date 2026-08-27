@@ -237,7 +237,7 @@ export interface RecoveryPortfolioMetrics {
 
 export interface GovernancePolicy {
   policy_type: string
-  value: any
+  value: string | number | boolean
   enabled: boolean
   description: string
   editable: boolean

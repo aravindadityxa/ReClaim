@@ -1,6 +1,6 @@
 """Pydantic models for recovery intelligence."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Dict
 from datetime import datetime
 
@@ -17,8 +17,7 @@ class RecoveryActionCandidate(BaseModel):
     confidence: float
     reason: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NextBestTime(BaseModel):
@@ -29,8 +28,7 @@ class NextBestTime(BaseModel):
     urgency_level: str
     rationale: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryRecommendation(BaseModel):
@@ -48,8 +46,7 @@ class RecoveryRecommendation(BaseModel):
     confidence: float
     computed_at: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryActionComparison(BaseModel):
@@ -59,8 +56,7 @@ class RecoveryActionComparison(BaseModel):
     recommended_action: str
     summary: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryPlan(BaseModel):
@@ -77,8 +73,7 @@ class RecoveryPlan(BaseModel):
     total_expected_value: float
     created_at: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryPortfolioMetrics(BaseModel):
@@ -94,8 +89,7 @@ class RecoveryPortfolioMetrics(BaseModel):
     average_friction_score: int
     action_distribution: Dict[str, int]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryOpportunitySummary(BaseModel):
@@ -112,8 +106,7 @@ class RecoveryOpportunitySummary(BaseModel):
     recommended_time: str
     status: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryIntelligenceDetail(BaseModel):
@@ -144,8 +137,7 @@ class RecoveryIntelligenceDetail(BaseModel):
     customer_recovery_rate: float
     customer_total_value: float
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryDashboardMetrics(BaseModel):
@@ -157,5 +149,4 @@ class RecoveryDashboardMetrics(BaseModel):
     expected_recovery_timeline: List[Dict]  # {date, expected_recovery}
     customer_contact_projection: Dict[str, int]  # {day, estimated_contacts}
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

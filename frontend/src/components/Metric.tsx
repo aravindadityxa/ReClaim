@@ -8,19 +8,45 @@ interface MetricProps {
 
 export default function Metric({ label, value, subtext, icon, trend }: MetricProps) {
   return (
-    <div className="metric">
+    <div 
+      className="card p-6 rounded-xl"
+      style={{
+        backgroundColor: 'var(--color-bg-elevated)',
+        boxShadow: 'var(--shadow-sm)',
+        borderColor: 'var(--color-border)',
+      }}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
+          <p 
+            className="text-sm font-medium"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            {label}
+          </p>
+          <p 
+            className="text-3xl font-bold mt-3"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             {typeof value === 'number' ? value.toLocaleString('en-IN') : value}
           </p>
           {subtext && (
-            <p className="text-xs text-gray-500 mt-1">{subtext}</p>
+            <p 
+              className="text-xs mt-2"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              {subtext}
+            </p>
           )}
         </div>
         {icon && (
-          <div className="ml-4 p-3 bg-gray-100 rounded-lg text-gray-600">
+          <div 
+            className="ml-4 p-3 rounded-lg"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              color: 'var(--color-primary-600)',
+            }}
+          >
             {icon}
           </div>
         )}

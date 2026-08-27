@@ -12,9 +12,11 @@ from schemas import (
     DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
     RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint,
     RiskSummary, RecoveryRecommendationSchema, RecoveryActionComparisonSchema,
-    RecoveryPortfolioMetricsSchema, RecoveryDashboardMetricsSchema,
     LoginRequest, TokenResponse, UserResponse, CurrentUserResponse,
     CreateUserRequest, UpdateUserRoleRequest, UserListResponse, SecurityEventResponse
+)
+from recovery_models import (
+    RecoveryPortfolioMetrics, RecoveryOpportunitySummary, RecoveryDashboardMetrics
 )
 from config import FRONTEND_URL, BACKEND_PORT
 from auth_service import (
@@ -594,8 +596,8 @@ def get_revenue_opportunities(
     risk_level: Optional[str] = Query(None),
     opp_type: Optional[str] = Query(None),
     recoverability: Optional[str] = Query(None),
-    sort_by: str = Query("created_at", regex="^(created_at|amount|risk_level)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|amount|risk_level)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
 ):
     """Get revenue opportunities with filtering and sorting."""
@@ -722,7 +724,7 @@ def get_risk_drivers(risk_analytics = Depends(get_risk_analytics)):
 
 @app.get("/api/risk/cohort")
 def get_cohort_risk(
-    dimension: str = Query("payment_method", regex="^(payment_method|failure_reason|opportunity_type)$"),
+    dimension: str = Query("payment_method", pattern="^(payment_method|failure_reason|opportunity_type)$"),
     risk_analytics = Depends(get_risk_analytics)
 ):
     """Get risk breakdown by cohort."""
@@ -881,7 +883,7 @@ def get_recovery_action_comparison(opportunity_id: str, db: Session = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/recovery/portfolio", response_model=RecoveryPortfolioMetricsSchema)
+@app.get("/api/recovery/portfolio", response_model=RecoveryPortfolioMetrics)
 def get_recovery_portfolio_metrics(recovery_analytics = Depends(get_recovery_analytics)):
     """Get aggregated recovery metrics for merchant portfolio."""
     try:
@@ -891,7 +893,7 @@ def get_recovery_portfolio_metrics(recovery_analytics = Depends(get_recovery_ana
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/recovery/dashboard", response_model=RecoveryDashboardMetricsSchema)
+@app.get("/api/recovery/dashboard", response_model=RecoveryDashboardMetrics)
 def get_recovery_dashboard_metrics(db: Session = Depends(get_db)):
     """Get comprehensive recovery dashboard metrics."""
     try:
@@ -905,7 +907,7 @@ def get_recovery_dashboard_metrics(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/recovery/queue")
+@app.get("/api/recovery/queue", response_model=list[RecoveryOpportunitySummary])
 def get_recovery_queue(limit: int = Query(20, ge=1, le=100), recovery_analytics = Depends(get_recovery_analytics)):
     """Get top recovery opportunities ranked by expected value."""
     try:
