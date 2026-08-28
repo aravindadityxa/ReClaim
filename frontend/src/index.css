@@ -197,6 +197,344 @@ body {
   .glow-info {
     box-shadow: var(--glow-info);
   }
+
+  /* ========================================================================
+     PAGE CONTAINERS & LAYOUTS
+     ======================================================================== */
+
+  .page-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--spacing-8);
+  }
+
+  .page-section {
+    margin-bottom: var(--spacing-12);
+  }
+
+  .section-divider {
+    border-top: 1px solid var(--color-border-subtle);
+    margin: var(--spacing-12) 0;
+  }
+
+  /* ========================================================================
+     HERO SECTIONS
+     ======================================================================== */
+
+  .hero-section {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-16) var(--spacing-8);
+    text-align: center;
+    position: relative;
+  }
+
+  .hero-title {
+    font-size: clamp(2.25rem, 6vw, 4rem);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--color-text-primary);
+    letter-spacing: var(--letter-spacing-tight);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .hero-subtitle {
+    font-size: clamp(1.125rem, 3vw, 1.875rem);
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+    max-width: 56rem;
+    margin: 0 auto var(--spacing-8);
+    line-height: var(--line-height-relaxed);
+  }
+
+  /* ========================================================================
+     GRID LAYOUTS
+     ======================================================================== */
+
+  .grid-auto {
+    display: grid;
+    gap: var(--spacing-6);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  .grid-2col {
+    display: grid;
+    gap: var(--spacing-6);
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+
+  .grid-3col {
+    display: grid;
+    gap: var(--spacing-6);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  .grid-4col {
+    display: grid;
+    gap: var(--spacing-6);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  /* ========================================================================
+     CARD VARIANTS
+     ======================================================================== */
+
+  .card-minimal {
+    background: transparent;
+    border: none;
+    padding: var(--spacing-4);
+  }
+
+  .card-dense {
+    background-color: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-4);
+  }
+
+  .card-spacious {
+    background-color: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-8);
+  }
+
+  .card-highlighted {
+    background: linear-gradient(
+      135deg,
+      var(--color-surface-elevated) 0%,
+      rgba(124, 140, 255, 0.05) 100%
+    );
+    border: 1px solid var(--color-accent-soft);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-6);
+    box-shadow: var(--glow-sm);
+  }
+
+  /* ========================================================================
+     STATUS & SEVERITY CARDS
+     ======================================================================== */
+
+  .status-success {
+    background-color: rgba(53, 208, 127, 0.08);
+    border: 1px solid rgba(53, 208, 127, 0.25);
+    color: #72E3A5;
+  }
+
+  .status-warning {
+    background-color: rgba(245, 184, 75, 0.08);
+    border: 1px solid rgba(245, 184, 75, 0.25);
+    color: #FFD27A;
+  }
+
+  .status-danger {
+    background-color: rgba(255, 92, 108, 0.08);
+    border: 1px solid rgba(255, 92, 108, 0.25);
+    color: #FF8D99;
+  }
+
+  .status-info {
+    background-color: rgba(88, 184, 255, 0.08);
+    border: 1px solid rgba(88, 184, 255, 0.25);
+    color: #83CCFF;
+  }
+
+  /* ========================================================================
+     TEXT ALIGNMENT & DISPLAY
+     ======================================================================== */
+
+  .text-center-md {
+    @media (min-width: 768px) {
+      text-align: center;
+    }
+  }
+
+  .flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ========================================================================
+     RESPONSIVE TYPOGRAPHY
+     ======================================================================== */
+
+  .title-responsive {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    font-weight: var(--font-weight-bold);
+  }
+
+  .heading-responsive {
+    font-size: clamp(1.25rem, 3vw, 1.875rem);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text-responsive {
+    font-size: clamp(0.875rem, 1.2vw, 1rem);
+  }
+
+  /* ========================================================================
+     SHADOW EFFECTS
+     ======================================================================== */
+
+  .shadow-xs {
+    box-shadow: var(--shadow-xs);
+  }
+
+  .shadow-sm {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-md {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-lg {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-xl {
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* ========================================================================
+     HOVER EFFECTS
+     ======================================================================== */
+
+  .hover-lift {
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hover-glow {
+    transition: box-shadow var(--transition-fast);
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--glow-md);
+  }
+
+  /* ========================================================================
+     BADGES & PILLS
+     ======================================================================== */
+
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: 9999px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    border: 1px solid transparent;
+  }
+
+  .badge-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ========================================================================
+     METRIC DISPLAY
+     ======================================================================== */
+
+  .metric-display {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .metric-value-large {
+    font-size: clamp(1.875rem, 5vw, 3rem);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    color: var(--color-text-primary);
+  }
+
+  .metric-value-medium {
+    font-size: clamp(1.25rem, 3vw, 1.875rem);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    color: var(--color-text-primary);
+  }
+
+  .metric-label-small {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--color-text-muted);
+  }
+
+  /* ========================================================================
+     FORM STYLING ENHANCEMENTS
+     ======================================================================== */
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .input-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+
+  .input-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--spacing-1);
+  }
+
+  /* ========================================================================
+     DIVIDERS & SEPARATORS
+     ======================================================================== */
+
+  .divider-horizontal {
+    border-top: 1px solid var(--color-border-subtle);
+  }
+
+  .divider-vertical {
+    border-left: 1px solid var(--color-border-subtle);
+  }
+
+  .divider-thick {
+    border: 1px solid var(--color-border);
+  }
+
+  /* ========================================================================
+     TRANSITIONS & ANIMATIONS ENHANCEMENTS
+     ======================================================================== */
+
+  .fade-in-enter {
+    animation: fade-in var(--transition-slow) var(--easing-smooth);
+  }
+
+  .slide-in-enter {
+    animation: slide-in-right var(--transition-base) var(--easing-smooth);
+  }
+
+  .scale-in-enter {
+    animation: scale-in var(--transition-base) var(--easing-spring);
+  }
 }
 
 
