@@ -1,6 +1,0 @@
-src/components/PremiumButton.tsx(108,83): error TS2349: This expression is not callable.
-  Type 'String' has no call signatures.
-src/components/PremiumCard.tsx(32,60): error TS2349: This expression is not callable.
-  Type 'String' has no call signatures.
-src/components/PremiumCard.tsx(42,60): error TS2349: This expression is not callable.
-  Type 'String' has no call signatures.

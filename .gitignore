@@ -22,6 +22,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.pytest_cache/
 
 # Virtual environments
 venv/
@@ -63,6 +64,14 @@ dist/
 build/
 .next/
 out/
+
+# Logs and debugging artifacts
+*.log
+tsc-*.log
+type-check-*.log
+build_output.txt
+tsc_output.txt
+tsc_errors.txt
 
 # IDE configs
 *.code-workspace
