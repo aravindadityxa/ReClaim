@@ -27,32 +27,34 @@ export const PremiumButton = React.forwardRef<
   ) => {
     const variantStyles = {
       primary: {
-        bg: 'var(--color-accent)',
-        text: 'var(--color-text-inverse)',
-        hoverBg: 'var(--color-accent-hover)',
-        glow: 'var(--glow-md)',
+        bg: 'var(--color-accent)' as const,
+        text: 'var(--color-text-inverse)' as const,
+        hoverBg: 'var(--color-accent-hover)' as const,
+        glow: 'var(--glow-md)' as const,
+        border: undefined as string | undefined,
       },
       secondary: {
-        bg: 'rgba(255, 255, 255, 0.05)',
-        text: 'var(--color-text-primary)',
-        hoverBg: 'rgba(255, 255, 255, 0.08)',
-        border: 'var(--color-border)',
+        bg: 'rgba(255, 255, 255, 0.05)' as const,
+        text: 'var(--color-text-primary)' as const,
+        hoverBg: 'rgba(255, 255, 255, 0.08)' as const,
+        border: 'var(--color-border)' as const,
+        glow: undefined as string | undefined,
       },
       danger: {
-        bg: 'var(--color-danger-bg)',
-        text: 'var(--color-danger-text)',
-        hoverBg: 'rgba(255, 92, 108, 0.16)',
-        border: 'var(--color-danger-border)',
-        glow: 'var(--glow-danger)',
+        bg: 'var(--color-danger-bg)' as const,
+        text: 'var(--color-danger-text)' as const,
+        hoverBg: 'rgba(255, 92, 108, 0.16)' as const,
+        border: 'var(--color-danger-border)' as const,
+        glow: 'var(--glow-danger)' as const,
       },
       success: {
-        bg: 'var(--color-success-bg)',
-        text: 'var(--color-success-text)',
-        hoverBg: 'rgba(53, 208, 127, 0.16)',
-        border: 'var(--color-success-border)',
-        glow: 'var(--glow-success)',
+        bg: 'var(--color-success-bg)' as const,
+        text: 'var(--color-success-text)' as const,
+        hoverBg: 'rgba(53, 208, 127, 0.16)' as const,
+        border: 'var(--color-success-border)' as const,
+        glow: 'var(--glow-success)' as const,
       },
-    }
+    } as const
 
     const sizeStyles = {
       sm: {
@@ -67,10 +69,10 @@ export const PremiumButton = React.forwardRef<
         padding: 'var(--spacing-4) var(--spacing-8)',
         fontSize: 'var(--font-size-lg)',
       },
-    }
+    } as const
 
-    const variantStyle = variantStyles[variant]
-    const sizeStyle = sizeStyles[size]
+    const variantStyle = variantStyles[variant as keyof typeof variantStyles]
+    const sizeStyle = sizeStyles[size as keyof typeof sizeStyles]
 
     return (
       <button
@@ -105,7 +107,7 @@ export const PremiumButton = React.forwardRef<
         }}
         onMouseLeave={(e) => {
           if (!disabled && !loading) {
-            (e.currentTarget as HTMLElement).style.backgroundColor = variantStyle.bg
+            (e.currentTarget as HTMLElement).style.backgroundColor = variantStyle.bg as string
             (e.currentTarget as HTMLElement).style.boxShadow = 'none'
           }
         }}

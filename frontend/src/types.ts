@@ -188,8 +188,9 @@ export interface RecoveryActionCandidate {
   expected_recovered_amount: number
   action_cost: number
   customer_friction_score: number
-  confidence: number
+  urgency_factor: number
   expected_net_value: number
+  confidence: number
   reason: string
 }
 
@@ -202,8 +203,10 @@ export interface RecoveryRecommendation {
   customer_friction_score: number
   why_this_action: string
   next_best_time: NextBestTime
+  why_not_others: Record<string, string>
   stopping_rules: string[]
   confidence: number
+  computed_at: string
 }
 
 export interface RecoveryActionComparison {
@@ -214,11 +217,15 @@ export interface RecoveryActionComparison {
 export interface RecoveryOpportunitySummary {
   opportunity_id: string
   amount: number
+  risk_score: number
+  recoverability_score: number
   recommended_action: string
   recovery_probability: number
   expected_recovery: number
   expected_net_value: number
   customer_friction: number
+  recommended_time: string
+  status: string
 }
 
 export interface RecoveryPortfolioMetrics {

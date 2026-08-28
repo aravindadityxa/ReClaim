@@ -165,6 +165,16 @@ class RecoveryAnalytics:
         
         opportunities = []
         
+        # Helper to convert recoverability enum to numeric score
+        def get_recoverability_score(recoverability_enum):
+            recoverability_str = recoverability_enum.value if hasattr(recoverability_enum, 'value') else str(recoverability_enum)
+            if recoverability_str == "HIGH":
+                return 100
+            elif recoverability_str == "MEDIUM":
+                return 66
+            else:  # LOW
+                return 33
+        
         for opp in at_risk_opps:
             try:
                 risk_info = self.risk_analytics.compute_opportunity_risk(opp.id)
@@ -187,7 +197,8 @@ class RecoveryAnalytics:
                     "customer_friction": rec.customer_friction_score,
                     "recommended_time": rec.next_best_time.recommended_date,
                     "risk_score": risk_info.get("risk_score", 0),
-                    "urgency_level": rec.next_best_time.urgency_level,
+                    "recoverability_score": get_recoverability_score(opp.recoverability),
+                    "status": opp.status.value,
                 })
             except Exception:
                 pass

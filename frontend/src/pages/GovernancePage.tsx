@@ -32,7 +32,7 @@ interface GovernanceStatus {
 }
 
 export const GovernancePage: React.FC = () => {
-  const [policies, setPolicies] = useState<Record<string, Policy>>({});
+  const [policies, setPolicies] = useState<Record<string, GovernancePolicy>>({});
   const [governanceStatus, setGovernanceStatus] = useState<GovernanceStatus | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<ApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);

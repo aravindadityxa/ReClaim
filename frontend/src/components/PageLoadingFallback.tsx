@@ -15,9 +15,9 @@ export default function PageLoadingFallback() {
     return () => clearInterval(interval)
   }, [])
 
-  const SkeletonLine = ({ width = '100%', height = '1rem', delay = 0 }) => (
+  const SkeletonLine = ({ width = '100%', height = '1rem', delay = 0, className = '' }) => (
     <div
-      className="rounded"
+      className={`rounded ${className}`}
       style={{
         width,
         height,
