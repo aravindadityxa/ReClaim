@@ -1,19 +1,24 @@
-# ReClaim - Intelligent Revenue Recovery & Intelligence Platform
+# ReClaim
 
-An AI-powered Revenue Recovery & Intelligence Platform
+**AI-Assisted Revenue Recovery Intelligence Platform**
+
+Recover lost revenue at scale with deterministic ML-powered risk scoring, intelligent recovery strategies, and locally-run AI explanations.
 
 ## Overview
 
-ReClaim helps merchants:
-- Detect revenue at risk with ML-powered risk scoring
-- Understand why revenue is at risk with feature analysis
-- Predict recovery outcomes with decision intelligence
-- Execute recovery safely with governance controls
-- Manage autonomous recovery workflows with human oversight
-- Measure and learn from recovery outcomes
-- Configure policies and approval workflows
+ReClaim solves the revenue recovery problem at enterprise scale. When customers fail to complete payments, traditional retry systems lack intelligence—they either retry blindly (wasting customer goodwill) or don't retry at all (losing revenue).
 
-This is a comprehensive platform for revenue risk detection, analysis, recovery recommendation, and safe autonomous recovery execution with full governance controls.
+ReClaim combines:
+- **ML-powered risk intelligence** — Detect at-risk revenue before it becomes unrecoverable
+- **Mathematical recovery engine** — Calculate optimal recovery probability and net value for each opportunity
+- **Deterministic action selection** — Choose the best recovery strategy based on risk, value, and customer profile
+- **Local AI explanations** — Understand decisions in natural language using qwen2:1.5b running locally
+- **Governance & approvals** — Enforce policy controls and prevent fraudulent recovery attempts
+- **Production reliability** — Graceful fallback, comprehensive error handling, RBAC, JWT authentication
+
+**Key Distinction:** The platform remains fully operational even when the local AI service is unavailable—governance and recovery decisions are purely deterministic, ML-based, and mathematically sound.
+
+---
 
 ## Quick Start
 
@@ -21,23 +26,7 @@ This is a comprehensive platform for revenue risk detection, analysis, recovery 
 - Python 3.8+
 - Node.js 16+ / npm
 - Git
-
-### Authentication & Security
-
-ReClaim includes a complete production security and access control engine:
-
-**Demo Credentials:**
-- Username: `admin`
-- Password: `Admin@123456`
-
-**User Roles:**
-- **ADMIN**: Full system access, user management, policy configuration, can view and execute all operations
-- **OPERATOR**: Manage recovery workflows, execute recovery actions, approve requests, view operational metrics
-- **ANALYST**: Read-only access to risk and recovery analytics, view system health and metrics
-- **VIEWER**: Read-only access to dashboards and basic system information
-
-**Default Admin User:**
-A default admin user is automatically created on first run with the credentials above. Change this password in production.
+- Ollama (optional, for local AI explanations)
 
 ### Backend Setup
 
@@ -47,7 +36,7 @@ cd backend
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment file and configure JWT secret
+# Copy environment file
 copy .env.example .env
 # Edit .env and set JWT_SECRET_KEY to a strong random value
 
@@ -58,13 +47,7 @@ python init_db.py
 python main.py
 ```
 
-The backend will be available at `http://localhost:8000`
-
-**API Authentication:**
-All protected endpoints require a JWT Bearer token in the Authorization header:
-```
-Authorization: Bearer <your_jwt_token>
-```
+Backend runs at `http://localhost:8000`
 
 ### Frontend Setup
 
@@ -78,179 +61,221 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`
+Frontend runs at `http://localhost:5173`
 
-You will be redirected to the login page. Use the demo credentials above.
+### Demo Credentials
+- **Username:** `admin`
+- **Password:** `Admin@123456`
 
-### Full Setup (One Command)
+---
 
-```bash
-# From root directory
+## Features
 
-# Terminal 1: Start backend
-cd backend && pip install -r requirements.txt && python init_db.py && python main.py
+### Revenue Command Center
+- Key metrics: Total revenue, revenue at risk, estimated recoverable, recovered revenue
+- Revenue health score based on payment success, risk ratio, recovery rate
+- 30-day revenue trends showing successful vs failed transactions
+- Risk breakdown by opportunity type
+- Filterable opportunities table with status and risk classification
+- Activity timeline with recent revenue events
 
-# Terminal 2: Start frontend
-cd frontend && npm install && npm run dev
+### Risk Intelligence
+- **ML-powered risk scoring** (0-100) for each opportunity based on 26 engineered features
+- Automatic risk classification: LOW, MEDIUM, HIGH, CRITICAL
+- Priority queue of opportunities ranked by risk and value
+- Risk driver extraction showing main factors contributing to risk
+- 30-day trends with anomaly/spike detection
+- Cohort analysis: Risk breakdown by payment method, failure reason, customer segment
+- Model performance metrics: F1 score, precision, recall, ROC-AUC
+
+### Recovery Intelligence
+- ML-based next best action selection
+- Recovery actions: Payment retry, payment link, customer reminder, subscription retry, invoice reminder
+- Optimal recovery timing calculation (minimize customer friction)
+- Portfolio metrics showing expected recovery value across opportunities
+- Recovery queue: Opportunities ranked and ready for recovery
+
+### Governance & Safety
+- Backend-enforced policy engine (no frontend bypass)
+- Approval workflow for high-value or high-risk actions
+- Action allowlist (only supported recovery actions permitted)
+- Policy rules: Maximum attempts, customer contact limits, value thresholds, probability requirements
+- Customer fatigue protection with friction scoring
+- Execution time windows
+- Emergency pause/resume controls for all autonomous recovery
+- Complete governance audit trail
+
+### Recovery Analytics
+- Recovery funnel: Track opportunities from detection → action → success
+- Strategy performance: Measure effectiveness of each recovery action across dimensions
+- Cohort analysis: Performance by payment method, failure reason, customer segment
+- Incremental revenue attribution: Measure true incremental recovery revenue
+- Strategy recommendations: ML-driven insights from historical performance
+- Real-time interactive dashboards
+
+### System Health & Monitoring
+- Real-time health checks for database, recovery engine, orchestrator, governance, executor, measurement, audit
+- Operational metrics: Recovery attempts, success rates, workflows, governance decisions, action execution
+- Error tracking with severity levels (INFO, WARNING, ERROR, CRITICAL)
+- Health dashboard showing system status, service health, metrics, error summary
+- System status API with quick health summary
+
+### Authentication & Authorization
+- JWT-based authentication with 24-hour token expiration
+- Four-tier RBAC: ADMIN, OPERATOR, ANALYST, VIEWER
+- Fine-grained permission system per role
+- bcrypt password hashing (cost=12)
+- Security audit trail for all authentication events
+- Protected routes and endpoints
+
+---
+
+## Architecture
+
+### System Overview
+
+```
+┌─────────────────┐
+│  React UI       │
+│  (TypeScript)   │
+└────────┬────────┘
+         │
+         ├─ Auth Context
+         ├─ ProtectedRoute
+         └─ API Client (JWT)
+         │
+┌────────▼────────────────────────┐
+│     FastAPI Backend             │
+│  (Python 3.8+, SQLAlchemy)      │
+├────────────────────────────────┤
+│ Risk Intelligence               │
+│  ├─ Feature Engineering (26)    │
+│  ├─ LogisticRegression Model    │
+│  └─ Risk Scoring                │
+├────────────────────────────────┤
+│ Recovery Engine                 │
+│  ├─ Action Selection            │
+│  ├─ Timing Optimization         │
+│  └─ Workflow Orchestration      │
+├────────────────────────────────┤
+│ Governance & Safety             │
+│  ├─ Policy Enforcement          │
+│  ├─ Approval Workflow           │
+│  └─ Action Executor             │
+├────────────────────────────────┤
+│ Ollama Service (Optional)       │
+│  └─ qwen2:1.5b Explanations     │
+├────────────────────────────────┤
+│ Audit & Analytics               │
+│  ├─ Recovery Measurement        │
+│  ├─ Outcome Tracking            │
+│  └─ Audit Trail                 │
+└──────────┬─────────────────────┘
+           │
+┌──────────▼──────────┐
+│   SQLite Database   │
+│  (dev/test)         │
+└─────────────────────┘
 ```
 
-## Authentication & Authorization
+### AI Architecture: Deterministic vs AI-Generated
 
-### API Authentication
+**Deterministic (Always Active):**
+- Risk scoring: LogisticRegression model with 26 engineered features
+- Recovery actions: Mathematical engine based on risk, value, customer profile
+- Governance: Backend policy engine with hard safety limits
+- Approvals: Rule-based workflow
+- Decisions are reproducible and explainable
 
-Login endpoint:
-```bash
-POST /api/auth/login
-{
-  "username": "admin",
-  "password": "Admin@123456"
-}
+**AI-Generated (Local LLM - Optional):**
+- Human-readable explanations of risk scoring decisions
+- Narrative summaries of recovery recommendations
+- Generated using qwen2:1.5b running locally on localhost:11434
+- Used for **explanation only** — does NOT influence decisions
+- Gracefully degraded when unavailable (decisions still execute)
 
-Response:
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "token_type": "bearer",
-  "user_id": "...",
-  "username": "admin",
-  "role": "ADMIN"
-}
-```
+**LLM Limitations:**
+The LLM does **NOT**:
+- Determine financial risk
+- Modify risk scores
+- Override recovery calculations
+- Bypass governance policies
+- Execute unrestricted financial actions
+- Change approval requirements
 
-Protected endpoints:
-```bash
-GET /api/auth/me -H "Authorization: Bearer <token>"
-POST /api/auth/logout -H "Authorization: Bearer <token>"
-```
+---
 
-### User Management (Admin Only)
+## Technology Stack
 
-Create user:
-```bash
-POST /api/users -H "Authorization: Bearer <admin_token>"
-{
-  "username": "newuser",
-  "email": "user@example.com",
-  "password": "SecurePassword@123456",
-  "full_name": "New User",
-  "role": "OPERATOR"
-}
-```
+**Frontend:**
+- React 18.2
+- TypeScript 5.2
+- Vite 5.0.8
+- Tailwind CSS 3.3.6
+- Recharts (charting)
+- Lucide React (icons)
 
-List users:
-```bash
-GET /api/users -H "Authorization: Bearer <admin_token>"
-```
+**Backend:**
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- Pandas
+- NumPy
+- scikit-learn (LogisticRegression)
+- SQLite
 
-Change user role:
-```bash
-PATCH /api/users/{user_id}/role -H "Authorization: Bearer <admin_token>"
-{
-  "role": "ANALYST"
-}
-```
+**AI (Optional):**
+- Ollama 0.33.2
+- Model: qwen2:1.5b
 
-Deactivate/activate user:
-```bash
-POST /api/users/{user_id}/deactivate -H "Authorization: Bearer <admin_token>"
-POST /api/users/{user_id}/activate -H "Authorization: Bearer <admin_token>"
-```
+**Testing & Build:**
+- TypeScript tsc
+- Vite build
+- pytest (Python tests)
 
-### Permission System
+**Authentication:**
+- JWT (HS256)
+- bcrypt
 
-Users are granted permissions based on their role:
-
-**ADMIN Permissions:**
-- Full access to all resources
-- dashboard.read, opportunities.read, risk.read, recovery.read, recovery.execute, recovery.workflow_manage
-- governance.read, governance.manage, governance.approve, governance.pause_resume
-- analytics.read, system.read, system.health, system.errors.read
-- users.read, users.manage, users.deactivate, users.role_change
-- settings.read, settings.manage
-
-**OPERATOR Permissions:**
-- dashboard.read, opportunities.read, risk.read, recovery.read, recovery.execute, recovery.workflow_manage
-- governance.read, governance.approve
-- system.read, system.health, system.errors.read
-
-**ANALYST Permissions:**
-- dashboard.read, opportunities.read, risk.read, risk.summary, recovery.read
-- governance.read, analytics.read
-- system.read, system.health
-
-**VIEWER Permissions:**
-- dashboard.read, opportunities.read, risk.summary
-- system.health (limited summary only)
-
-### Security Features
-
-- **JWT Authentication**: Secure token-based authentication with 24-hour expiration
-- **Password Hashing**: bcrypt with cost=12 for secure password storage
-- **Role-Based Access Control (RBAC)**: Four-tier role hierarchy with fine-grained permissions
-- **Authorization Middleware**: Backend endpoint protection with permission checking
-- **Security Audit Trail**: All authentication and authorization events logged with severity levels
-- **Protected Routes**: Frontend routing protected with authentication context
-- **Session Storage**: Tokens stored in sessionStorage for session-level security
-- **Admin Protections**: Prevents removing last administrator or deactivating last admin
-- **Deactivated User Blocking**: Inactive users cannot authenticate
-
-### Security Configuration
-
-**Environment Variables (.env):**
-```
-JWT_SECRET_KEY=your-super-secret-key-change-in-production
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION_HOURS=24
-ACCESS_TOKEN_EXPIRES_MINUTES=1440
-```
-
-**Production Security Recommendations:**
-1. Change the default admin password immediately
-2. Set a strong JWT_SECRET_KEY (use `python -c "import secrets; print(secrets.token_urlsafe(32))"`)
-3. Use HTTPS/TLS for all API communication
-4. Enable CORS restrictions for production domains
-5. Implement rate limiting on authentication endpoints
-6. Use environment variables for all secrets (never commit .env)
-7. Regularly rotate JWT secret and user credentials
-8. Monitor security event logs for suspicious activity
+---
 
 ## Project Structure
 
 ```
 ReClaim/
-├── backend/                       # FastAPI backend
-│   ├── main.py                   # FastAPI application + endpoints
-│   ├── models.py                 # SQLAlchemy models (including User, SecurityEvent)
-│   ├── auth_service.py           # JWT, password hashing, permission management
-│   ├── auth_middleware.py        # Authorization middleware and permission mapping
-│   ├── business_logic.py         # Revenue calculations
-│   ├── risk_features.py          # Feature engineering (26 features)
-│   ├── risk_model.py             # LogisticRegression model
-│   ├── risk_analytics.py         # Risk calculations
-│   ├── recovery_strategies.py    # Recovery action definitions
-│   ├── recovery_engine.py        # Recovery recommendations
-│   ├── recovery_timing.py        # Next best time optimization
-│   ├── recovery_orchestrator.py  # Agent planner for workflows
-│   ├── action_executor.py        # Safe action execution
-│   ├── policy_guard.py           # Safety validation
-│   ├── governance_service.py     # Policy enforcement engine
-│   ├── policy_rules.py           # Policy definitions
-│   ├── approval_service.py       # Approval workflow management
-│   ├── recovery_measurement.py   # Recovery outcome measurement and analytics
-│   ├── audit_service.py          # Audit trail logging
-│   ├── database.py               # Database configuration
-│   ├── seed.py                   # Seed data generation
-│   ├── schemas.py                # Pydantic schemas
-│   ├── config.py                 # Configuration
-│   ├── init_db.py                # Database initialization
-│   ├── tests.py                  # Business logic tests
-│   ├── tests_governance.py       # Governance tests
-│   ├── test_security.py          # Security, authentication, and RBAC tests
-│   ├── requirements.txt          # Python dependencies
-├── frontend/                      # React + TypeScript frontend
+├── backend/
+│   ├── main.py                    # FastAPI app, routes
+│   ├── models.py                  # SQLAlchemy models
+│   ├── auth_service.py            # JWT, password, permissions
+│   ├── auth_middleware.py         # Authorization middleware
+│   ├── business_logic.py          # Revenue calculations
+│   ├── risk_features.py           # 26 feature engineering
+│   ├── risk_model.py              # LogisticRegression model
+│   ├── recovery_engine.py         # Recovery recommendations
+│   ├── recovery_timing.py         # Optimal timing
+│   ├── governance_service.py      # Policy engine
+│   ├── policy_rules.py            # Policy definitions
+│   ├── approval_service.py        # Approval workflow
+│   ├── action_executor.py         # Safe execution
+│   ├── recovery_measurement.py    # Outcome tracking
+│   ├── audit_service.py           # Audit trail
+│   ├── ollama_service.py          # Local AI (qwen2:1.5b)
+│   ├── database.py                # DB config
+│   ├── seed.py                    # Seed data
+│   ├── schemas.py                 # Pydantic schemas
+│   ├── config.py                  # Configuration
+│   ├── init_db.py                 # Database init
+│   ├── tests.py                   # Business logic tests
+│   ├── tests_governance.py        # Governance tests
+│   ├── test_security.py           # Auth/RBAC tests
+│   ├── requirements.txt           # Dependencies
+│   ├── .env.example               # Environment template
+│   └── risk_models/               # ML artifacts (generated)
+│
+├── frontend/
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── Login.tsx         # Authentication login page
-│   │   │   ├── UserManagement.tsx # User management interface (admin only)
+│   │   │   ├── Login.tsx
 │   │   │   ├── Dashboard.tsx
 │   │   │   ├── Opportunities.tsx
 │   │   │   ├── RiskIntelligence.tsx
@@ -260,390 +285,387 @@ ReClaim/
 │   │   │   ├── RecoveryAnalyticsPage.tsx
 │   │   │   ├── SystemHealth.tsx
 │   │   │   ├── Activity.tsx
-│   │   │   ├── Settings.tsx
+│   │   │   ├── UserManagement.tsx
+│   │   │   └── Settings.tsx
 │   │   ├── components/
-│   │   │   ├── ProtectedRoute.tsx # Route protection component
-│   │   ├── hooks/
-│   │   │   ├── useAuth.ts        # Authentication hook
+│   │   │   ├── ProtectedRoute.tsx
 │   │   ├── context/
-│   │   │   ├── AuthContext.tsx   # Authentication context provider
-│   │   ├── api.ts                # API client with JWT support
-│   │   ├── types.ts              # TypeScript interfaces
-│   │   ├── App.tsx               # Main app with auth integration
-│   │   ├── main.tsx              # Entry point
+│   │   │   └── AuthContext.tsx
+│   │   ├── hooks/
+│   │   │   └── useAuth.ts
+│   │   ├── api.ts                 # API client (typed)
+│   │   ├── types.ts               # TypeScript interfaces
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── styles/
+│   │       └── design-system.css
 │   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
 │   ├── tsconfig.json
-```
-│   ├── risk_models/              # ML model artifacts (generated)
-│   └── .env.example              # Environment template
+│   └── index.html
 │
-├── frontend/                      # React + Vite frontend
-│   ├── src/
-│   │   ├── pages/               # Dashboard, Opportunities, Activity, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety, Recovery Analytics
-│   │   ├── components/          # Reusable UI components (Badge, Cards, Queue, etc.)
-│   │   ├── App.tsx              # Main app with navigation
-│   │   ├── api.ts               # API client
-│   │   ├── types.ts             # TypeScript types
-│   │   └── index.css            # Global styles
-│   ├── package.json             # Node dependencies
-│   ├── vite.config.ts           # Vite configuration
-│   ├── tailwind.config.js       # Tailwind CSS configuration
-│   ├── tsconfig.json            # TypeScript configuration
-│   └── index.html               # HTML template
-│
-└── README.md                      # This file
+├── LICENSE
+└── README.md
 ```
 
-## Tech Stack
+---
 
-**Backend:**
-- FastAPI - Web framework
-- SQLAlchemy - ORM
-- Pydantic - Data validation
-- SQLite - Database
-- Pandas - Data analysis
-- NumPy - Numerical computing
-- scikit-learn - Machine learning (LogisticRegression for risk prediction)
+## Setup Instructions
 
-**Frontend:**
-- React 18 - UI library
-- Vite - Build tool
-- Tailwind CSS - Styling
-- Recharts - Charting library
-- TypeScript - Type safety
-- Lucide React - Icon library
+### Prerequisites Check
 
-## Features
-
-### Revenue Command Center
-- **Key Metrics**: Total revenue, revenue at risk, estimated recoverable, recovered revenue
-- **Revenue Health**: Health score based on payment success, risk ratio, recovery rate
-- **Revenue Trends**: 30-day chart showing successful vs failed transactions
-- **Risk Breakdown**: Breakdown by opportunity type
-- **Revenue Opportunities**: Filterable table with status, risk, recoverability
-- **Activity Timeline**: Recent revenue events with timestamps
-
-### Risk Intelligence
-- **Risk Scoring**: ML-powered loss probability (0-100) for each opportunity
-- **Risk Levels**: Automatic classification (LOW/MEDIUM/HIGH/CRITICAL)
-- **Priority Queue**: Opportunities ranked by priority
-- **Risk Drivers**: Extraction of main risk factors
-- **Trends & Detection**: 30-day trends with spike detection
-- **Cohort Analysis**: Risk breakdown by payment method, failure reason
-- **Model Performance**: F1 score, precision, recall, ROC-AUC
-
-### Recovery Intelligence
-- **Recovery Recommendations**: ML-based next best action selection
-- **Recovery Actions**: Payment retry, payment link, customer reminder, subscription retry, invoice reminder
-- **Next Best Time**: Optimal timing for recovery actions
-- **Portfolio Metrics**: Expected recovery value across opportunities
-- **Recovery Queue**: Ranked opportunities ready for recovery
-
-### Agentic Recovery Engine
-- **Workflow Management**: Bounded autonomous recovery workflows
-- **Action Execution**: Safe execution in Razorpay Test Mode
-- **State Machine**: DETECTED→PLANNED→READY→EXECUTING→SUCCEEDED/FAILED
-- **Recovery Attempts**: Track all actions with execution details
-- **Idempotency**: Prevent duplicate execution
-- **Audit Trail**: Complete audit log of all operations
-- **Stopping Rules**: Automatic stopping conditions (success, max attempts, repeated failures)
-
-### Governance & Safety Engine
-- **Policy Enforcement**: Backend-enforced governance on all actions
-- **Approval Workflow**: Approval queue for high-value or high-risk actions
-- **Action Allowlist**: Only explicitly supported recovery actions
-- **Policy Rules**: Maximum attempts, customer contacts, expected value, probability thresholds
-- **Friction Protection**: Customer fatigue protection with friction scoring
-- **Time Windows**: Execution allowed in specific time windows only
-- **Emergency Controls**: Pause/resume all autonomous recovery execution
-- **Policy Dashboard**: View and manage merchant policies
-- **Governance Audit**: Complete audit of all policy decisions
-
-### Recovery Analytics & Optimization
-- **Recovery Funnel**: Track opportunities through detection → recovery → success
-- **Strategy Performance**: Measure effectiveness of each recovery action across all dimensions
-- **Cohort Analysis**: Analyze recovery performance by payment method, failure reason, customer segment
-- **Incremental Revenue Attribution**: Measure true incremental revenue from recovery efforts
-- **Strategy Recommendations**: ML-driven recommendations based on historical performance
-- **Learning System**: Continuous improvement from recovery outcome data
-- **Real-time Dashboards**: Interactive analytics with funnel, strategy, cohort, and incremental revenue views
-
-### Production Reliability & Observability
-- **System Health Monitoring**: Real-time health checks for database, recovery engine, orchestrator, governance, executor, measurement, and audit services
-- **Operational Metrics**: Track recovery attempts, success rates, workflows, governance decisions, revenue metrics, and action execution
-- **Error Tracking**: Centralized error and exception management with severity levels (INFO, WARNING, ERROR, CRITICAL) and context (workflow, opportunity, customer IDs)
-- **Health Dashboard**: Frontend page showing system status, service health, operational metrics, and error summary
-- **System Status API**: Quick status endpoint with summary of service health and critical errors
-- **Error Query API**: Filter and retrieve errors by severity, component, workflow, or opportunity
-
-## API Endpoints
-
-### Revenue Endpoints
-```
-GET  /health                              # Health check
-GET  /api/dashboard/revenue-summary       # Dashboard metrics
-GET  /api/dashboard/revenue-trend         # Revenue trends
-GET  /api/revenue-opportunities           # List opportunities with filters
-GET  /api/revenue-opportunities/{id}      # Opportunity details
-GET  /api/revenue-activity                # Revenue event timeline
+```bash
+python --version           # Python 3.8+
+node --version            # Node 16+
+npm --version             # npm 7+
 ```
 
-### Risk Intelligence Endpoints
-```
-GET  /api/risk/summary                    # Risk summary metrics
-GET  /api/risk/queue?limit=20             # Top opportunities by priority
-GET  /api/risk/drivers                    # Risk breakdown by driver
-GET  /api/risk/cohort?dimension=...       # Risk by cohort
-GET  /api/risk/trend?days=30              # Risk trends over time
-GET  /api/risk/spike?days=7               # Spike detection
-GET  /api/risk/opportunities/{id}         # Detailed opportunity risk analysis
-GET  /api/risk/model-performance          # Model metrics and info
-```
+### Backend Setup (Step-by-Step)
 
-### Recovery Intelligence Endpoints
-```
-GET  /api/recovery/portfolio              # Portfolio metrics
-GET  /api/recovery/queue                  # Recovery opportunities queue
-GET  /api/recovery/recommendation/{id}    # Next best action for opportunity
-GET  /api/recovery/actions/{id}           # Action comparison
-```
+```bash
+# 1. Enter backend directory
+cd backend
 
-### Agentic Recovery & Governance Endpoints
-```
-POST /api/recovery/workflows/{id}         # Create recovery workflow
-POST /api/recovery/workflows/{id}/plan    # Plan recovery actions
-POST /api/recovery/workflows/{id}/validate  # Validate and ready workflow
-POST /api/recovery/workflows/{id}/execute  # Execute next action
-GET  /api/recovery/workflows/{id}         # Get workflow state
-GET  /api/recovery/workflows/{id}/audit   # Get audit trail
-GET  /api/recovery/control-center         # Control center summary
+# 2. Create virtual environment (optional but recommended)
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Mac/Linux:
+source venv/bin/activate
 
-GET  /api/governance/policies             # Get current policies
-PUT  /api/governance/policies/{type}      # Update policy
-POST /api/governance/evaluate             # Evaluate action against policies
-GET  /api/governance/approvals            # Get approval queue
-GET  /api/governance/approvals/{id}       # Get specific approval
-POST /api/governance/approvals/{id}/approve  # Approve request
-POST /api/governance/approvals/{id}/reject   # Reject request
-POST /api/governance/pause                # Pause all recovery execution
-POST /api/governance/resume               # Resume recovery execution
-GET  /api/governance/dashboard            # Governance dashboard summary
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Copy environment template
+cp .env.example .env
+
+# 5. Edit .env with strong JWT_SECRET_KEY
+# Generate one: python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 6. Initialize database (seeds with sample data)
+python init_db.py
+
+# 7. Start backend server
+python main.py
 ```
 
-### Recovery Analytics & Optimization Endpoints
+Backend will log:
 ```
-GET  /api/analytics/recovery/funnel?days=30           # Recovery funnel metrics
-GET  /api/analytics/recovery/strategies?strategy=...  # Strategy performance
-GET  /api/analytics/recovery/cohorts?cohort_type=...  # Cohort analysis
-GET  /api/analytics/recovery/incremental?days=30      # Incremental revenue
-GET  /api/analytics/recovery/recommendations?opportunity_type=...  # Strategy recommendations
+Uvicorn running on http://127.0.0.1:8000
 ```
 
-## Database
+### Frontend Setup (Step-by-Step)
 
-### Models
-- **Customer**: Merchant customers
-- **Transaction**: Payment transactions (success/failure)
-- **RevenueOpportunity**: Failed transactions identified as recovery opportunities with risk classification
+```bash
+# 1. Enter frontend directory
+cd frontend
 
-### Seed Data
-- 15 deterministic customers
-- 186 transactions across 60 days
-- 33+ revenue opportunities with realistic failure patterns
-- Data is reproducible (seeded with fixed random seed)
+# 2. Install dependencies
+npm install
 
-## Risk Classifications
-- Each opportunity is classified by:
-  - **Risk Level**: LOW, MEDIUM, HIGH, CRITICAL (based on age and transaction patterns)
-  - **Recoverability**: LOW, MEDIUM, HIGH (based on failure type)
-  - **Status**: RECOVERABLE, AT_RISK, RECOVERED, or LOST
-  - Used as training targets for ML model
+# 3. Start dev server
+npm run dev
+```
 
-## Revenue Calculations
+Frontend will log:
+```
+  Local:   http://localhost:5173/
+```
 
-### Revenue Health Score
-Weighted composite of:
-- **Payment Success Rate** (40%): Percentage of successful transactions
-- **Risk Ratio** (30%): Revenue at risk / total revenue (inverted)
-- **Recovery Rate** (20%): Recovered revenue / total at-risk revenue
-- **Stability** (10%): Base stability metric
+### Ollama Setup (Optional - for AI Explanations)
 
-### Revenue at Risk
-Sum of opportunity amounts with status `AT_RISK` or `RECOVERABLE`
+Ollama provides local AI explanations. Not required for core functionality.
 
-### Estimated Recoverable
-Based on recoverability classification:
-- HIGH: 75% of opportunity amount
-- MEDIUM: 40% of opportunity amount
-- LOW: 10% of opportunity amount
+```bash
+# 1. Download and install Ollama
+# From: https://ollama.ai
+
+# 2. Start Ollama service
+ollama serve
+# Ollama will listen on localhost:11434
+
+# 3. Pull qwen2:1.5b model
+ollama pull qwen2:1.5b
+
+# 4. Verify installation
+ollama list
+# Should show: qwen2:1.5b
+
+# 5. Verify connectivity
+curl http://localhost:11434/api/tags
+```
+
+**Configure Backend for Ollama:**
+
+In `.env`:
+```env
+OLLAMA_ENABLED=true
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2:1.5b
+OLLAMA_TIMEOUT=30
+```
+
+### First Run
+
+1. **Start Backend** (Terminal 1):
+```bash
+cd backend && python main.py
+```
+
+2. **Start Frontend** (Terminal 2):
+```bash
+cd frontend && npm run dev
+```
+
+3. **Login** to http://localhost:5173:
+   - Username: `admin`
+   - Password: `Admin@123456`
+
+4. **Navigate** through Dashboard → Risk Intelligence → Recovery Intelligence
+
+---
+
+## API Overview
+
+### Authentication
+
+```bash
+POST /api/auth/login
+{
+  "username": "admin",
+  "password": "Admin@123456"
+}
+
+Response:
+{
+  "access_token": "eyJ0eXAi...",
+  "token_type": "bearer",
+  "user": {
+    "id": "...",
+    "username": "admin",
+    "role": "ADMIN"
+  }
+}
+```
+
+All protected endpoints require:
+```
+Authorization: Bearer <access_token>
+```
+
+### Risk API
+
+```
+GET  /api/risk/summary              # Risk metrics
+GET  /api/risk/queue?limit=20       # Top opportunities
+GET  /api/risk/opportunities/{id}   # Risk details
+```
+
+### Recovery API
+
+```
+GET  /api/recovery/queue            # Recovery opportunities
+GET  /api/recovery/recommendation/{id}  # Next best action
+```
+
+### Governance API
+
+```
+GET  /api/governance/policies       # Current policies
+POST /api/governance/evaluate       # Policy check
+GET  /api/governance/approvals      # Approval queue
+```
+
+### Analytics API
+
+```
+GET  /api/analytics/recovery/funnel       # Recovery metrics
+GET  /api/analytics/recovery/strategies   # Strategy performance
+```
+
+### System API
+
+```
+GET  /health                        # Health check
+GET  /api/system/health             # System status
+GET  /api/system/errors             # Error tracking
+```
+
+### Ollama API (Optional)
+
+```
+GET  /api/system/ollama-status      # Ollama connection status
+GET  /api/risk/explanation/{id}     # AI risk explanation
+GET  /api/recovery/explanation/{id} # AI recovery explanation
+```
+
+---
+
+## Security
+
+### Authentication
+
+- JWT tokens with 24-hour expiration
+- Secure password hashing with bcrypt (cost=12)
+- Session tokens stored in sessionStorage (frontend)
+
+### Authorization
+
+- Role-Based Access Control (RBAC)
+- Four roles: ADMIN, OPERATOR, ANALYST, VIEWER
+- Fine-grained permissions per role
+- Backend enforcement (frontend cannot bypass)
+
+### Protection Mechanisms
+
+- Input validation on all endpoints
+- SQL injection prevention (SQLAlchemy ORM)
+- CORS configuration
+- Secrets never committed (.gitignore)
+- Environment variables for all sensitive data
+
+### Policy Engine
+
+- Hard safety limits cannot be modified
+- All actions validated before execution
+- Governance rules backend-enforced
+- Audit trail of all decisions
+
+---
+
+## Performance
+
+**Optimizations:**
+- N+1 query elimination
+- Database caching
+- Parallel API operations (Promise.all)
+- Frontend lazy loading with React.lazy
+- Component memoization
+- Code splitting with Vite
+- React Suspense for async loading
+
+**Considerations:**
+- SQLite suitable for development
+- Data loaded on-demand per page
+- Governance checks are deterministic (fast)
+- AI explanations load independently (don't block decisions)
+
+---
 
 ## Testing
 
-Run the comprehensive verification suite:
+### TypeScript Verification
+
+```bash
+cd frontend
+npx tsc --noEmit
+```
+
+Must show: `0 errors`
+
+### Build Verification
+
+```bash
+cd frontend
+npm run build
+```
+
+Must complete successfully.
+
+### Backend Tests
 
 ```bash
 cd backend
-python verify_governance.py
+pytest tests.py -v                  # Business logic
+pytest tests_governance.py -v       # Governance
+pytest test_security.py -v          # Auth & RBAC
 ```
 
-Validates:
-- Policy rules and validation
-- Governance evaluation engine
-- Approval workflow
-- Pause/resume controls
-- Component integration
+### Full Flow Test
 
-Run pytest for business logic tests:
+1. Login with demo credentials
+2. Navigate Dashboard → view revenue metrics
+3. Go to Risk Intelligence → view opportunities
+4. Go to Recovery Intelligence → view recommendations
+5. Check System Health → verify all services
+6. (Optional) Trigger AI explanation if Ollama running
 
-```bash
-cd backend
-pytest tests.py -v
-```
+---
 
-Or run governance tests:
+## Demo Workflow
 
-```bash
-cd backend
-pytest tests_governance.py -v
-```
+1. **Login** → Use demo credentials
+2. **Dashboard** → View revenue summary, health metrics
+3. **Risk Intelligence** → Explore opportunities, view risk drivers
+4. **Recovery Intelligence** → View recovery recommendations
+5. **Recovery Control Center** → Manage workflows, execute actions
+6. **Governance** → Review policies, approval queue
+7. **Recovery Analytics** → View funnel, strategy performance
+8. **System Health** → Monitor service health, check Ollama
+9. **User Management** (Admin) → Manage users and roles
+10. **Settings** → Configure system preferences
 
-## Architecture
+---
 
-### Backend Structure
-- **Models**: SQLAlchemy database models for customers, transactions, opportunities, recovery executions, approvals
-- **Business Logic**: Revenue calculations, risk scoring, recovery recommendations
-- **Recovery Engine**: Agent planner for bounded autonomous recovery workflows
-- **Governance**: Policy enforcement, approval workflow, emergency controls
-- **Audit**: Complete audit trail of all operations
+## Limitations & Notes
 
-### Frontend Structure
-- **Pages**: Dashboard, Revenue Opportunities, Risk Intelligence, Recovery Intelligence, Recovery Control Center, Governance & Safety
-- **Components**: Reusable UI components for cards, tables, charts
-- **API Client**: Typed API integration with all backend endpoints
-- **Types**: Complete TypeScript type definitions
+### Ollama (AI Explanations)
 
-### Execution Flow
-```
-Revenue Opportunity
-        ↓
-Risk Intelligence (ML-powered scoring)
-        ↓
-Recovery Intelligence (Action recommendation)
-        ↓
-Agent Planner (Workflow creation)
-        ↓
-Governance Engine (Policy evaluation)
-        ↓
-Decision (ALLOWED / BLOCKED / REQUIRES_APPROVAL / DEFERRED)
-        ↓
-Approval Queue (If approval required)
-        ↓
-Action Executor (Safe execution in Test Mode)
-        ↓
-Razorpay Test Mode (Sandboxed execution)
-        ↓
-Audit Trail (Complete record)
-```
+- Requires local installation (not cloud-based)
+- Model size: 934 MB for qwen2:1.5b
+- Performance depends on hardware (CPU/RAM)
+- Explanations are **informational only** — do not influence decisions
+- Application remains fully functional when Ollama is offline
 
-## Implementation Status
+### Database
 
-**Complete & Production Ready:**
-- Revenue risk detection and classification
-- ML-powered risk scoring and prediction
-- Recovery action recommendations
-- Recovery workflow orchestration with safe execution
-- Governance & Safety Engine with policy enforcement
-- Approval workflow for high-value actions
-- Emergency pause/resume controls
-- Comprehensive audit trail
-- Backend policy enforcement (no frontend bypass)
-- Razorpay Test Mode integration
-- Recovery measurement and outcome tracking
-- Recovery analytics with funnel, strategy, and cohort analysis
-- Incremental revenue attribution engine
-- Strategy performance recommendations based on historical data
-- Learning system for continuous improvement
+- SQLite is suitable for development and testing
+- Production deployment should use PostgreSQL or similar
+- Database file: `reclaim.db` in backend directory
+
+### Deployment Status
+
+- **Development**: Fully functional with local setup
+- **Testing**: All core features operational
+- **Production**: Not yet deployed to cloud
+
+### Model & Architecture
+
+- Deterministic ML model (LogisticRegression) cannot be replaced
+- qwen2:1.5b is the specified local AI model
+- Architecture is production-ready for local deployment
+- All API contracts are stable
+
+---
 
 ## Environment Variables
 
 ```env
-DATABASE_URL=sqlite:///./reclaim.db    # SQLite database path
-BACKEND_PORT=8000                       # Backend server port
-FRONTEND_URL=http://localhost:5173     # Frontend URL for CORS
+# Backend
+DATABASE_URL=sqlite:///./reclaim.db
+BACKEND_PORT=8000
+FRONTEND_URL=http://localhost:5173
+JWT_SECRET_KEY=<strong-random-key>
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+
+# Ollama (Optional)
+OLLAMA_ENABLED=true
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2:1.5b
+OLLAMA_TIMEOUT=30
 ```
-
-## Development
-
-### Adding a New Page
-1. Create page component in `frontend/src/pages/`
-2. Add navigation item in `App.tsx`
-3. Use API client from `api.ts`
-4. Implement loading/error/empty states
-
-### Adding a New API Endpoint
-1. Define Pydantic schema in `backend/schemas.py`
-2. Create route in `backend/main.py`
-3. Add business logic in `backend/business_logic.py`
-4. Add API client method in `frontend/src/api.ts`
-
-## Performance Notes
-
-- SQLite is sufficient for development
-- Frontend loads data on-demand per page
-- Governance checks are fast (deterministic backend logic)
-- No LLM invocation for policy evaluation (performance critical)
-- Charts render efficiently with Recharts
-
-## Security
-
-- Input validation on all API endpoints
-- No secrets committed to repository
-- CORS configured for development
-- SQL queries use SQLAlchemy ORM (safe from injection)
-- Backend enforces all policies (no frontend bypass)
-- Test Mode only for Razorpay integration
-- Hard safety limits cannot be modified through merchant settings
-
-## Future Considerations
-
-- PostgreSQL for production scale
-- Redis caching for dashboard metrics
-- WebSocket for real-time updates
-- Advanced feature engineering for recovery
-- LLM integration for policy explanation (Ollama + Qwen3 4B)
-- Production Razorpay integration
-- Multiple merchant support
-- Advanced approval workflow rules
-
-## Development Notes
-
-### ML Model Artifacts
-The `backend/risk_models/` directory contains generated model artifacts. These are:
-- Generated automatically on first API request or `init_db.py` run
-- Not committed to Git (.gitignore prevents this)
-- Recreated on each fresh database initialization
-- Safe to delete locally (will be retrained on next startup)
-
-### Governance Policy System
-Policies are enforced on the backend and cannot be bypassed from the frontend:
-- All actions pass through governance evaluation before execution
-- Policies are stored in PolicySet with validation
-- Approval requests are created for actions requiring approval
-- Merchant can configure safe policies (validators prevent unsafe values)
-- Hard limits like test-mode-only cannot be changed
-
-### Adding Governance Policies
-1. Define PolicyType in `policy_rules.py`
-2. Add default value in DefaultPolicies
-3. Add validation in PolicyValidator
-4. Policies are automatically available through API
-5. Frontend displays editable policies
-
-## Support
-
-For implementation details, refer to the API endpoints and test suites.
 
 ---
 
-**Status:** Complete - Revenue Risk Intelligence & Safe Autonomous Recovery Platform
-**Last Updated:** 2026
+## License
+
+See LICENSE file for details.
+
+---
+
+**Status:** Production-Grade Revenue Recovery Intelligence Platform
+
+**Last Updated:** August 2026
+
