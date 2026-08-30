@@ -917,6 +917,165 @@ def get_recovery_queue(limit: int = Query(20, ge=1, le=100), recovery_analytics 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================================
+# Phase 3b: AI Explanation Layer (Ollama LLM)
+# ============================================================================
+
+@app.get("/api/recovery/explanation/{opportunity_id}")
+def get_recovery_explanation(opportunity_id: str, db: Session = Depends(get_db)):
+    """
+    Get AI-generated explanation for recovery recommendation.
+    
+    This is an EXPLANATION layer ONLY.
+    The actual recommendation comes from deterministic engines.
+    The LLM explains why the recommendation was made, not what it should be.
+    Gracefully handles Ollama unavailability - returns 200 OK with ai_available=false.
+    """
+    from ollama_service import get_ollama_service
+    from risk_analytics import RiskAnalytics
+    
+    try:
+        # Get opportunity
+        opportunity = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.id == opportunity_id
+        ).first()
+        if not opportunity:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        # Get deterministic recommendation
+        recovery_analytics = get_recovery_analytics(db)
+        recommendation = recovery_analytics.get_recovery_recommendation(opportunity_id)
+        
+        # Get risk info for context
+        risk_analytics = RiskAnalytics(db)
+        risk_info = risk_analytics.calculate_risk_for_opportunity(opportunity)
+        
+        # Prepare context for LLM (deterministic data only)
+        context = {
+            "opportunity_id": opportunity_id,
+            "revenue_amount": opportunity.amount,
+            "recommended_action": recommendation.recommended_action,
+            "recovery_probability": recommendation.recovery_probability,
+            "expected_net_value": recommendation.expected_net_value,
+            "recoverability_score": recommendation.expected_recovered_amount,
+            "risk_level": risk_info.get("risk_level", "UNKNOWN"),
+            "customer_friction_score": recommendation.customer_friction_score,
+            "failure_reason": opportunity.failure_reason or "Unknown"
+        }
+        
+        # Generate explanation using Ollama (graceful fallback if unavailable)
+        ollama_service = get_ollama_service()
+        response = ollama_service.generate_recovery_explanation(context)
+        
+        # Always return 200 OK, include ai_available flag
+        return {
+            "opportunity_id": opportunity_id,
+            "ai_explanation": response.text if response.success else None,
+            "ai_available": response.success,
+            "error": response.error if not response.success else None,
+            "model": response.model,
+            "latency_ms": response.latency_ms
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting recovery explanation: {e}")
+        # Return 200 with ai_available=false instead of 500
+        return {
+            "opportunity_id": opportunity_id,
+            "ai_explanation": None,
+            "ai_available": False,
+            "error": str(e),
+            "model": None,
+            "latency_ms": None
+        }
+
+
+@app.get("/api/risk/explanation/{opportunity_id}")
+def get_risk_explanation(opportunity_id: str, db: Session = Depends(get_db)):
+    """
+    Get AI-generated explanation for risk assessment.
+    
+    This is an EXPLANATION layer ONLY.
+    The actual risk score comes from the ML model.
+    The LLM explains why the risk level was assigned, not what it should be.
+    Gracefully handles Ollama unavailability - returns 200 OK with ai_available=false.
+    """
+    from ollama_service import get_ollama_service
+    from risk_analytics import RiskAnalytics
+    
+    try:
+        # Get opportunity
+        opportunity = db.query(RevenueOpportunity).filter(
+            RevenueOpportunity.id == opportunity_id
+        ).first()
+        if not opportunity:
+            raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+        # Get risk assessment
+        risk_analytics = RiskAnalytics(db)
+        risk_info = risk_analytics.calculate_risk_for_opportunity(opportunity)
+        
+        # Prepare context for LLM (deterministic data only)
+        context = {
+            "opportunity_id": opportunity_id,
+            "revenue_amount": opportunity.amount,
+            "risk_score": risk_info.get("risk_score", 0),
+            "risk_level": risk_info.get("risk_level", "UNKNOWN"),
+            "risk_drivers": risk_info.get("risk_drivers", []),
+            "failure_reason": opportunity.failure_reason or "Unknown"
+        }
+        
+        # Generate explanation using Ollama (graceful fallback if unavailable)
+        ollama_service = get_ollama_service()
+        response = ollama_service.generate_risk_explanation(context)
+        
+        # Always return 200 OK, include ai_available flag
+        return {
+            "opportunity_id": opportunity_id,
+            "ai_explanation": response.text if response.success else None,
+            "ai_available": response.success,
+            "error": response.error if not response.success else None,
+            "model": response.model,
+            "latency_ms": response.latency_ms
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting risk explanation: {e}")
+        # Return 200 with ai_available=false instead of 500
+        return {
+            "opportunity_id": opportunity_id,
+            "ai_explanation": None,
+            "ai_available": False,
+            "error": str(e),
+            "model": None,
+            "latency_ms": None
+        }
+
+
+@app.get("/api/system/ollama-status")
+def get_ollama_status():
+    """
+    Get Ollama service health status.
+    Used by System Health page to display LLM availability.
+    """
+    from ollama_service import get_ollama_service
+    
+    try:
+        ollama_service = get_ollama_service()
+        status = ollama_service.get_health_status()
+        return status
+    except Exception as e:
+        return {
+            "enabled": False,
+            "connected": False,
+            "reason": str(e)
+        }
+
+
 # Phase 4: Agentic Recovery Engine Endpoints
 
 @app.post("/api/recovery/workflows/{opportunity_id}")

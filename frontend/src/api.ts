@@ -30,6 +30,8 @@ import {
   CreateUserRequest,
   UpdateUserRoleRequest,
   UserListResponse,
+  OllamaExplanationResponse,
+  OllamaHealthStatus,
 } from './types'
 
 const API_BASE = '/api'
@@ -193,6 +195,13 @@ export const api = {
   getRecoveryControlCenter: (): Promise<any> =>
     fetchJSON('/recovery/control-center'),
 
+  // Phase 3b: AI Explanation Layer (Ollama)
+  getRecoveryExplanation: (opportunityId: string): Promise<OllamaExplanationResponse> =>
+    fetchJSON<OllamaExplanationResponse>(`/recovery/explanation/${opportunityId}`),
+
+  getRiskExplanation: (opportunityId: string): Promise<OllamaExplanationResponse> =>
+    fetchJSON<OllamaExplanationResponse>(`/risk/explanation/${opportunityId}`),
+
   // Phase 5: Governance & Safety
   getGovernancePolicies: () =>
     fetchJSON<GovernancePoliciesResponse>('/governance/policies'),
@@ -280,6 +289,9 @@ export const api = {
 
   getSystemStatus: () =>
     fetchJSON<SystemStatus>('/system/status'),
+
+  getOllamaStatus: (): Promise<OllamaHealthStatus> =>
+    fetchJSON<OllamaHealthStatus>('/system/ollama-status'),
 }
 
 

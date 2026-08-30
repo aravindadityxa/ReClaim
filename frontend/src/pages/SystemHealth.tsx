@@ -4,7 +4,7 @@ import {
   Database, Zap, Shield, Gauge, TrendingUp, Clock, XCircle, Cpu
 } from 'lucide-react'
 import { api } from '../api'
-import { SystemHealthResponse, OperationalMetrics, SystemStatus } from '../types'
+import { SystemHealthResponse, OperationalMetrics, SystemStatus, OllamaHealthStatus } from '../types'
 import LoadingState from '../components/LoadingState'
 import ErrorState from '../components/ErrorState'
 import { CinematicBackground } from '../components/CinematicBackground'
@@ -14,6 +14,7 @@ export default function SystemHealth() {
   const [health, setHealth] = useState<SystemHealthResponse | null>(null)
   const [metrics, setMetrics] = useState<OperationalMetrics | null>(null)
   const [status, setStatus] = useState<SystemStatus | null>(null)
+  const [ollamaStatus, setOllamaStatus] = useState<OllamaHealthStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
@@ -23,15 +24,17 @@ export default function SystemHealth() {
       setLoading(true)
       setError(null)
 
-      const [healthRes, metricsRes, statusRes] = await Promise.all([
+      const [healthRes, metricsRes, statusRes, ollamaRes] = await Promise.all([
         api.getSystemHealth(),
         api.getSystemMetrics(),
         api.getSystemStatus(),
+        api.getOllamaStatus().catch(() => null),
       ])
 
       setHealth(healthRes)
       setMetrics(metricsRes)
       setStatus(statusRes)
+      setOllamaStatus(ollamaRes)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load system health')
     } finally {
@@ -242,6 +245,57 @@ export default function SystemHealth() {
                 </div>
               </ScrollTriggerAnimation>
             ))}
+            
+            {/* Ollama AI Service */}
+            {ollamaStatus && (
+              <ScrollTriggerAnimation delay={Object.keys(health.checks).length * 100}>
+                <div className="border rounded-lg p-6 overflow-hidden group" style={{
+                  ...cardStyle,
+                  backgroundColor: ollamaStatus.connected ? 'var(--color-success-light)' : 'var(--color-error-light)',
+                  borderColor: ollamaStatus.connected ? 'var(--color-success)' : 'var(--color-error)',
+                }}>
+                  <div className="flex items-start justify-between mb-3">
+                    <h4 className="font-semibold capitalize text-sm" style={headingStyle}>
+                      Ollama LLM Service
+                    </h4>
+                    {ollamaStatus.connected ? 
+                      <CheckCircle className="w-5 h-5" style={{ color: 'var(--color-success)' }} /> :
+                      <XCircle className="w-5 h-5" style={{ color: 'var(--color-error)' }} />
+                    }
+                  </div>
+                  <p className="text-sm mb-3" style={textSecondaryStyle}>
+                    {ollamaStatus.connected ? 'AI explanation service operational' : 'AI service unavailable'}
+                  </p>
+                  <div className="text-xs space-y-1 pt-3 border-t" style={{
+                    color: 'var(--color-text-tertiary)',
+                    borderColor: ollamaStatus.connected ? 'var(--color-success)' : 'var(--color-error)',
+                  }}>
+                    <div className="flex justify-between">
+                      <span className="font-medium" style={headingStyle}>Status:</span>
+                      <span>{ollamaStatus.connected ? 'Connected' : 'Disconnected'}</span>
+                    </div>
+                    {ollamaStatus.model && (
+                      <div className="flex justify-between">
+                        <span className="font-medium" style={headingStyle}>Model:</span>
+                        <span>{ollamaStatus.model}</span>
+                      </div>
+                    )}
+                    {ollamaStatus.latency_ms && (
+                      <div className="flex justify-between">
+                        <span className="font-medium" style={headingStyle}>Latency:</span>
+                        <span>{ollamaStatus.latency_ms}ms</span>
+                      </div>
+                    )}
+                    {ollamaStatus.reason && (
+                      <div className="flex justify-between">
+                        <span className="font-medium" style={headingStyle}>Error:</span>
+                        <span className="text-red-600">{ollamaStatus.reason}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ScrollTriggerAnimation>
+            )}
           </div>
         </div>
 

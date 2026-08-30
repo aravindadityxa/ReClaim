@@ -449,3 +449,25 @@ export interface AuthContextType {
   loading: boolean
   error: string | null
 }
+
+// Phase 3b: AI Explanation Layer (Ollama LLM)
+
+export interface OllamaExplanationResponse {
+  opportunity_id: string
+  ai_explanation: string | null
+  ai_available: boolean
+  error: string | null
+  model: string | null
+  latency_ms: number | null
+}
+
+export interface OllamaHealthStatus {
+  enabled: boolean
+  connected: boolean
+  url?: string
+  model?: string
+  model_installed?: boolean
+  latency_ms?: number
+  available_models?: string[]
+  reason?: string
+}
