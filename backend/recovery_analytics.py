@@ -22,10 +22,15 @@ class RecoveryAnalytics:
         self.db = db
         self.recovery_engine = RecoveryRecommendationEngine(db)
         self.risk_analytics = RiskAnalytics(db)
+        self._db_id_cache = None  # Track db session for cache invalidation
+        self._all_opportunities_cache = None  # Cache all at-risk opportunities
+        self._recommendations_cache = None  # Cache recommendations computed during portfolio metrics
+        self._customer_histories_cache = None  # Cache customer histories
     
     def get_portfolio_metrics(self) -> RecoveryPortfolioMetrics:
         """
         Get aggregated recovery metrics for merchant portfolio.
+        Cache recommendations for reuse by get_recovery_queue.
         
         Returns:
             RecoveryPortfolioMetrics with portfolio-level insights
@@ -44,7 +49,7 @@ class RecoveryAnalytics:
             RevenueOpportunity.customer_id.in_(list(customer_ids))
         ).all() if customer_ids else []
         
-        # Build customer history cache
+        # Build customer history cache (store for reuse)
         customer_histories = {}
         for cust_id in customer_ids:
             cust_opps = [o for o in all_customer_opps if o.customer_id == cust_id]
@@ -54,7 +59,10 @@ class RecoveryAnalytics:
                 "total_value": sum(o.amount for o in cust_opps) if cust_opps else 0,
             }
         
-        # Get recommendations for all opportunities
+        self._customer_histories_cache = customer_histories  # Cache for get_recovery_queue
+        
+        # Get recommendations for all opportunities (cache for reuse)
+        recommendations_by_id = {}  # Map opportunity_id -> recommendation
         recommendations = []
         total_contacts = 0
         action_distribution = {}
@@ -73,6 +81,7 @@ class RecoveryAnalytics:
             try:
                 rec = self.recovery_engine.get_recommendation(opp, risk_info, customer_history)
                 recommendations.append(rec)
+                recommendations_by_id[opp.id] = (rec, risk_info)  # Cache for queue
                 
                 # Track action distribution
                 action = rec.recommended_action
@@ -83,6 +92,8 @@ class RecoveryAnalytics:
                     total_contacts += 1
             except Exception:
                 pass
+        
+        self._recommendations_cache = recommendations_by_id  # Store for get_recovery_queue
         
         if not recommendations:
             return self._empty_portfolio_metrics()
@@ -136,6 +147,7 @@ class RecoveryAnalytics:
     def get_recovery_queue(self, limit: int = 20) -> List[Dict]:
         """
         Get top recovery opportunities ranked by expected net value.
+        Reuses recommendations cached by get_portfolio_metrics if available.
         
         Args:
             limit: Maximum number of opportunities to return
@@ -143,6 +155,47 @@ class RecoveryAnalytics:
         Returns:
             List of top recovery opportunities
         """
+        # If recommendations were already computed (by portfolio metrics call), reuse them
+        if self._recommendations_cache is not None and self._customer_histories_cache is not None:
+            at_risk_opps = self.db.query(RevenueOpportunity).filter(
+                RevenueOpportunity.status.in_([OpportunityStatus.AT_RISK, OpportunityStatus.RECOVERABLE])
+            ).all()
+            
+            opportunities = []
+            
+            def get_recoverability_score(recoverability_enum):
+                recoverability_str = recoverability_enum.value if hasattr(recoverability_enum, 'value') else str(recoverability_enum)
+                if recoverability_str == "HIGH":
+                    return 100
+                elif recoverability_str == "MEDIUM":
+                    return 66
+                else:  # LOW
+                    return 33
+            
+            # Reuse cached recommendations - no recomputation needed
+            for opp in at_risk_opps:
+                if opp.id in self._recommendations_cache:
+                    rec, risk_info = self._recommendations_cache[opp.id]
+                    
+                    opportunities.append({
+                        "opportunity_id": opp.id,
+                        "amount": opp.amount,
+                        "recommended_action": rec.recommended_action,
+                        "expected_recovery": rec.expected_recovered_amount,
+                        "recovery_probability": rec.recovery_probability,
+                        "expected_net_value": rec.expected_net_value,
+                        "customer_friction": rec.customer_friction_score,
+                        "recommended_time": rec.next_best_time.recommended_date,
+                        "risk_score": risk_info.get("risk_score", 0),
+                        "recoverability_score": get_recoverability_score(opp.recoverability),
+                        "status": opp.status.value,
+                    })
+            
+            # Sort by expected net value descending
+            opportunities.sort(key=lambda x: x["expected_net_value"], reverse=True)
+            return opportunities[:limit]
+        
+        # Fallback: if portfolio metrics wasn't called, compute independently
         at_risk_opps = self.db.query(RevenueOpportunity).filter(
             RevenueOpportunity.status.in_([OpportunityStatus.AT_RISK, OpportunityStatus.RECOVERABLE])
         ).all()

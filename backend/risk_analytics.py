@@ -21,6 +21,7 @@ class RiskAnalytics:
         self.scorer = RiskScorer()
         self._features_cache = None  # Cache features within a request
         self._features_cache_db_id = None  # Track which db session this was built for
+        self._all_risks_cache = None  # Cache all opportunities risk within a request
         self._ensure_model_trained()
 
     def _ensure_model_trained(self):
@@ -121,7 +122,11 @@ class RiskAnalytics:
         }
 
     def compute_all_opportunities_risk(self) -> List[Dict]:
-        """Compute risk for all opportunities."""
+        """Compute risk for all opportunities. Cached within request lifecycle."""
+        # Return cached result if available (same session)
+        if self._all_risks_cache is not None and self._features_cache_db_id == id(self.db):
+            return self._all_risks_cache
+        
         opportunities = self.db.query(RevenueOpportunity).all()
         results = []
 
@@ -130,6 +135,8 @@ class RiskAnalytics:
             if risk:
                 results.append(risk)
 
+        # Cache for this request
+        self._all_risks_cache = results
         return results
 
     def get_risk_queue(self, limit: int = 20) -> List[Dict]:

@@ -77,14 +77,11 @@ class SystemHealthCheck:
             from recovery_engine import RecoveryRecommendationEngine
             engine = RecoveryRecommendationEngine(self.db)
             
-            # Verify it can get opportunities
-            opps = engine.get_recovery_eligible_opportunities()
-            
+            # Just verify it initializes (no special methods to call)
             return ServiceHealth(
                 name="recovery_engine",
                 status=HealthStatus.HEALTHY,
                 message="Recovery engine operational",
-                details={"eligible_opportunities": len(opps)}
             )
         except Exception as e:
             logger.error(f"Recovery engine health check failed: {str(e)}")
@@ -151,7 +148,7 @@ class SystemHealthCheck:
         """Check action executor availability."""
         try:
             from action_executor import ActionExecutor
-            executor = ActionExecutor(self.db)
+            executor = ActionExecutor()  # No parameters needed
             
             # Verify it initializes
             return ServiceHealth(

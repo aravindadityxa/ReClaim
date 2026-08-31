@@ -46,18 +46,21 @@ export default function RecoveryIntelligence() {
       setLoading(true)
       setError(null)
       
-      // Parallelize both API calls
-      const [metricsData, queueData] = await Promise.all([
-        api.getRecoveryPortfolioMetrics(),
-        api.getRecoveryQueue(),
-      ])
-      
+      // Load critical recovery metrics first
+      const metricsData = await api.getRecoveryPortfolioMetrics()
       setMetrics(metricsData)
-      setQueue(queueData)
+      setLoading(false)
+
+      // Load queue as secondary (non-blocking) - reuse portfolio data
+      try {
+        const queueData = await api.getRecoveryQueue()
+        setQueue(queueData)
+      } catch (queueErr) {
+        console.warn('Recovery queue failed to load, skipping', queueErr)
+      }
     } catch (err) {
       const message = err instanceof APIError ? err.message : 'Failed to load recovery intelligence'
       setError(message)
-    } finally {
       setLoading(false)
     }
   }
@@ -79,7 +82,7 @@ export default function RecoveryIntelligence() {
 
   // Memoize recovery potential data
   const recoveryPotentialData = useMemo(() => {
-    if (!metrics) return []
+    if (!metrics || !metrics.recovery_potential_by_type) return []
     return Object.entries(metrics.recovery_potential_by_type).map(([type, amount]) => ({
       name: type.replace(/_/g, ' '),
       value: amount,

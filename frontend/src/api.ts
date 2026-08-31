@@ -145,20 +145,8 @@ export const api = {
     getDrivers: () =>
       fetchJSON<RiskDriver[]>('/risk/drivers'),
 
-    getCohortRisk: (dimension: string = 'payment_method') =>
-      fetchJSON<CohortRisk[]>(`/risk/cohort?dimension=${dimension}`),
-
     getTrend: (days: number = 30) =>
       fetchJSON<RiskTrendPoint[]>(`/risk/trend?days=${days}`),
-
-    detectSpikes: (days: number = 7) =>
-      fetchJSON<RiskSpike>(`/risk/spike?days=${days}`),
-
-    getOpportunityRisk: (opportunityId: string) =>
-      fetchJSON<RiskOpportunityInfo>(`/risk/opportunities/${opportunityId}`),
-
-    getModelPerformance: () =>
-      fetchJSON<ModelPerformance>('/risk/model-performance'),
   },
 
   getRecoveryPortfolioMetrics: () =>
@@ -166,12 +154,6 @@ export const api = {
 
   getRecoveryQueue: (limit: number = 20) =>
     fetchJSON<RecoveryOpportunitySummary[]>(`/recovery/queue?limit=${limit}`),
-
-  getRecoveryRecommendation: (opportunityId: string) =>
-    fetchJSON<RecoveryRecommendation>(`/recovery/recommendation/${opportunityId}`),
-
-  getRecoveryActions: (opportunityId: string) =>
-    fetchJSON<RecoveryActionComparison>(`/recovery/actions/${opportunityId}`),
 
   // Phase 4: Agentic Recovery Engine
   createRecoveryWorkflow: (opportunityId: string): Promise<any> =>

@@ -44,25 +44,31 @@ export default function RiskIntelligence() {
       setLoading(true)
       setError(null)
 
-      // Parallelize all API calls
-      const [summaryData, queueData, driversData, trendData] = await Promise.all([
+      // Load critical data first (3 endpoints)
+      const [summaryData, queueData, driversData] = await Promise.all([
         api.risk.getSummary(),
         api.risk.getQueue(20),
         api.risk.getDrivers(),
-        api.risk.getTrend(30),
       ])
 
       setSummary(summaryData)
       setQueue(queueData)
       setDrivers(driversData)
-      setTrend(trendData)
+      setLoading(false)
+
+      // Load secondary trend data after page renders (non-blocking)
+      try {
+        const trendData = await api.risk.getTrend(30)
+        setTrend(trendData)
+      } catch (trendErr) {
+        console.warn('Trend data failed to load, skipping', trendErr)
+      }
     } catch (err) {
       if (err instanceof APIError) {
         setError(`Failed to load risk intelligence: ${err.message}`)
       } else {
         setError('Failed to load risk intelligence')
       }
-    } finally {
       setLoading(false)
     }
   }
@@ -341,8 +347,8 @@ export default function RiskIntelligence() {
           </div>
         </ScrollTriggerAnimation>
 
-        {/* RISK TREND ANALYSIS */}
-        {trend.length > 0 && (
+        {/* RISK TREND ANALYSIS - Loads asynchronously after page renders */}
+        {trend && trend.length > 0 && (
           <ScrollTriggerAnimation animation="fade-in-up" delay={350}>
             <div className="rounded-2xl overflow-hidden border border-cyan-500/20 backdrop-blur-sm p-8"
               style={{

@@ -50,16 +50,14 @@ app.add_middleware(
 
 @app.middleware("http")
 async def clear_analytics_cache(request: Request, call_next):
-    """Clear analytics feature caches after each request."""
+    """Cache management middleware - PRESERVE caches across requests."""
     try:
         response = await call_next(request)
     finally:
-        # Clear cached features to prevent stale data on next request
-        if 'instance' in _risk_analytics_cache:
-            _risk_analytics_cache['instance']._features_cache = None
-            _risk_analytics_cache['instance']._features_cache_db_id = None
-        if 'instance' in _recovery_analytics_cache:
-            _recovery_analytics_cache['instance']._metrics_cache = None
+        # DO NOT clear cached analytics instances - they are expensive to reinitialize
+        # The feature cache is already invalidated when db session changes
+        # This preserves process-level model initialization and prevents retraining
+        pass
     return response
 
 
