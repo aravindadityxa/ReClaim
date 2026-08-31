@@ -663,9 +663,3 @@ OLLAMA_TIMEOUT=30
 
 See LICENSE file for details.
 
----
-
-**Status:** Production-Grade Revenue Recovery Intelligence Platform
-
-**Last Updated:** August 2026
-
