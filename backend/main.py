@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import logging
 
 from database import get_db, init_db, SessionLocal
 from models import RevenueOpportunity, OpportunityStatus, OpportunityType, RiskLevel, Recoverability, User, UserRole
 from business_logic import RevenueAnalytics
+from recovery_engine import RecoveryRecommendationEngine
 from schemas import (
     DashboardSummary, DashboardTrend, RevenueOpportunityResponse,
     RevenueOpportunityDetail, RiskBreakdown, RevenueTrendPoint,
@@ -24,6 +26,8 @@ from auth_service import (
     get_user_permissions, has_permission, log_security_event, create_access_token,
     get_user_by_username
 )
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ReClaim Revenue Command Center")
 
@@ -942,24 +946,49 @@ def get_recovery_explanation(opportunity_id: str, db: Session = Depends(get_db))
         if not opportunity:
             raise HTTPException(status_code=404, detail="Opportunity not found")
         
-        # Get deterministic recommendation
-        recovery_analytics = get_recovery_analytics(db)
-        recommendation = recovery_analytics.get_recovery_recommendation(opportunity_id)
-        
-        # Get risk info for context
+        # Get risk info
         risk_analytics = RiskAnalytics(db)
-        risk_info = risk_analytics.calculate_risk_for_opportunity(opportunity)
+        risk_info = risk_analytics.compute_opportunity_risk(opportunity_id)
+        
+        # Get customer history for recovery recommendation
+        recovery_analytics = get_recovery_analytics(db)
+        queue = recovery_analytics.get_recovery_queue(limit=100)
+        opp_data = next((o for o in queue if o["opportunity_id"] == opportunity_id), None)
+        
+        if not opp_data:
+            # Build recommendation manually if not in queue
+            customer_id = opportunity.customer_id
+            customer_opps = db.query(RevenueOpportunity).filter(
+                RevenueOpportunity.customer_id == customer_id
+            ).all()
+            recovered_count = len([o for o in customer_opps if o.status == OpportunityStatus.RECOVERED])
+            customer_history = {
+                "recovery_rate": recovered_count / len(customer_opps) if customer_opps else 0.5,
+                "total_value": sum(o.amount for o in customer_opps) if customer_opps else 0,
+            }
+            
+            recovery_engine = RecoveryRecommendationEngine(db)
+            rec = recovery_engine.get_recommendation(opportunity, risk_info, customer_history)
+            opp_data = {
+                "opportunity_id": opportunity_id,
+                "amount": opportunity.amount,
+                "recommended_action": rec.recommended_action,
+                "expected_recovery": rec.expected_recovered_amount,
+                "recovery_probability": rec.recovery_probability,
+                "expected_net_value": rec.expected_net_value,
+                "customer_friction": rec.customer_friction_score,
+            }
         
         # Prepare context for LLM (deterministic data only)
         context = {
             "opportunity_id": opportunity_id,
             "revenue_amount": opportunity.amount,
-            "recommended_action": recommendation.recommended_action,
-            "recovery_probability": recommendation.recovery_probability,
-            "expected_net_value": recommendation.expected_net_value,
-            "recoverability_score": recommendation.expected_recovered_amount,
+            "recommended_action": opp_data.get("recommended_action", "UNKNOWN"),
+            "recovery_probability": opp_data.get("recovery_probability", 0),
+            "expected_net_value": opp_data.get("expected_net_value", 0),
+            "recoverability_score": opp_data.get("expected_recovery", 0),
             "risk_level": risk_info.get("risk_level", "UNKNOWN"),
-            "customer_friction_score": recommendation.customer_friction_score,
+            "customer_friction_score": opp_data.get("customer_friction", 0),
             "failure_reason": opportunity.failure_reason or "Unknown"
         }
         

@@ -55,19 +55,51 @@ export default function App() {
     return <Login />
   }
 
-  const navItems = [
-    { id: 'dashboard' as Page, label: 'Dashboard', icon: BarChart3 },
-    { id: 'risk' as Page, label: 'Risk Intelligence', icon: AlertTriangle },
-    { id: 'recovery' as Page, label: 'Recovery Intelligence', icon: Zap },
-    { id: 'control-center' as Page, label: 'Recovery Control Center', icon: Gauge },
-    { id: 'analytics' as Page, label: 'Recovery Analytics', icon: LineChart },
-    { id: 'governance' as Page, label: 'Governance & Safety', icon: Shield },
-    { id: 'health' as Page, label: 'System Health', icon: Cpu },
-    { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp },
-    { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity },
-    ...(currentUser.role === 'ADMIN' ? [{ id: 'users' as Page, label: 'User Management', icon: User }] : []),
-    { id: 'settings' as Page, label: 'Settings', icon: Settings },
+  const navSections = [
+    {
+      title: 'COMMAND',
+      items: [
+        { id: 'dashboard' as Page, label: 'Dashboard', icon: BarChart3, description: 'Revenue overview' },
+      ]
+    },
+    {
+      title: 'INTELLIGENCE',
+      items: [
+        { id: 'risk' as Page, label: 'Risk Intelligence', icon: AlertTriangle, description: 'Risk analysis' },
+        { id: 'recovery' as Page, label: 'Recovery Intelligence', icon: Zap, description: 'Recovery strategy' },
+        { id: 'opportunities' as Page, label: 'Revenue Opportunities', icon: TrendingUp, description: 'Opportunity list' },
+      ]
+    },
+    {
+      title: 'OPERATIONS',
+      items: [
+        { id: 'control-center' as Page, label: 'Recovery Control Center', icon: Gauge, description: 'Execution' },
+        { id: 'analytics' as Page, label: 'Recovery Analytics', icon: LineChart, description: 'Measurement' },
+        { id: 'activity' as Page, label: 'Revenue Activity', icon: Activity, description: 'Event log' },
+      ]
+    },
+    {
+      title: 'TRUST',
+      items: [
+        { id: 'governance' as Page, label: 'Governance & Safety', icon: Shield, description: 'Policy control' },
+        { id: 'health' as Page, label: 'System Health', icon: Cpu, description: 'System status' },
+      ]
+    },
+    ...(currentUser.role === 'ADMIN' ? [{
+      title: 'ADMINISTRATION',
+      items: [
+        { id: 'users' as Page, label: 'User Management', icon: User, description: 'Access control' },
+      ]
+    }] : []),
+    {
+      title: 'SETTINGS',
+      items: [
+        { id: 'settings' as Page, label: 'Settings', icon: Settings, description: 'Configuration' },
+      ]
+    }
   ]
+
+  const flatNavItems = navSections.flatMap(section => section.items)
 
   const handleLogout = async () => {
     try {
@@ -79,7 +111,7 @@ export default function App() {
     }
   }
 
-  const currentPageLabel = navItems.find((item) => item.id === currentPage)?.label || 'Dashboard'
+  const currentPageLabel = flatNavItems.find((item) => item.id === currentPage)?.label || 'Dashboard'
 
   return (
     <div className="flex h-screen bg-primary">
@@ -132,39 +164,51 @@ export default function App() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6 px-3">
-          <div className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = currentPage === item.id
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          <div className="space-y-6">
+            {navSections.map((section) => (
+              <div key={section.title}>
+                {sidebarOpen && (
+                  <p className="px-3 py-2 text-xs font-bold uppercase tracking-wider" 
+                    style={{ color: 'var(--color-text-muted)' }}>
+                    {section.title}
+                  </p>
+                )}
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = currentPage === item.id
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setCurrentPage(item.id)
-                    setShowUserMenu(false)
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-smooth text-sm font-medium relative group`}
-                  style={{
-                    backgroundColor: isActive ? 'rgba(124, 140, 255, 0.12)' : 'transparent',
-                    color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                  }}
-                  title={!sidebarOpen ? item.label : undefined}
-                >
-                  {isActive && (
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-1 rounded-r"
-                      style={{
-                        backgroundColor: 'var(--color-accent)',
-                      }}
-                    />
-                  )}
-                  <Icon size={18} className="flex-shrink-0" />
-                  {sidebarOpen && <span className="truncate">{item.label}</span>}
-                </button>
-              )
-            })}
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentPage(item.id)
+                          setShowUserMenu(false)
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-smooth text-sm font-medium relative group`}
+                        style={{
+                          backgroundColor: isActive ? 'rgba(124, 140, 255, 0.12)' : 'transparent',
+                          color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                        }}
+                        title={!sidebarOpen ? item.label : undefined}
+                      >
+                        {isActive && (
+                          <div
+                            className="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                            style={{
+                              backgroundColor: 'var(--color-accent)',
+                            }}
+                          />
+                        )}
+                        <Icon size={18} className="flex-shrink-0" />
+                        {sidebarOpen && <span className="truncate">{item.label}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </nav>
 
