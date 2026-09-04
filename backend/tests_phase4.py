@@ -1,4 +1,4 @@
-"""Phase 4 Agentic Recovery Engine tests."""
+"""Recovery engine tests."""
 
 import pytest
 from datetime import datetime
@@ -68,7 +68,7 @@ def test_db():
 
 
 class TestStateTransitions:
-    """Test Phase 4 state machine."""
+    """State machine tests."""
     
     def test_valid_transitions(self):
         """Test valid state transitions."""

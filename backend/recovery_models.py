@@ -119,7 +119,7 @@ class RecoveryIntelligenceDetail(BaseModel):
     created_at: str
     opportunity_age_days: int
     
-    # Risk metrics from Phase 2
+    # Risk metrics
     risk_score: int
     risk_level: str
     recoverability_score: int

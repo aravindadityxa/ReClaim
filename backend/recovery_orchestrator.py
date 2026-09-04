@@ -61,7 +61,7 @@ class RecoveryOrchestrator:
     
     def plan_recovery(self, opportunity_id: str, audit: Optional[AuditTrail] = None) -> Tuple[RecoveryWorkflowState, Optional[str]]:
         """
-        Create a recovery plan from Phase 3 recommendation.
+        Create a recovery plan from recommendation.
         
         Returns:
             (updated_workflow_state, error_message_if_failed)
@@ -82,7 +82,7 @@ class RecoveryOrchestrator:
         if not opp:
             return None, f"Opportunity not found: {opportunity_id}"
         
-        # Get Phase 3 recommendation
+        # Get recommendation
         try:
             recommendation = self.recommendation_engine.get_recommendation(opportunity_id)
         except Exception as e:
@@ -195,7 +195,7 @@ class RecoveryOrchestrator:
         daily_actions = 0  # Would query database in production
         weekly_actions = 0  # Would query database in production
         
-        # GOVERNANCE EVALUATION - PHASE 5
+        # Governance evaluation
         governance_eval = governance_engine.evaluate(
             action_type=next_action,
             amount=opp.amount,
@@ -247,7 +247,7 @@ class RecoveryOrchestrator:
             return workflow, None
         
         # ALLOWED - proceed with execution
-        # Validate action can execute (Phase 4 checks)
+        # Validate action execution
         can_execute, rejection_reason = PolicyGuard.can_execute_action(
             next_action,
             workflow,
@@ -375,7 +375,7 @@ class RecoveryOrchestrator:
         if no_action_only:
             eligible_actions = no_action_only
         
-        # Sort by expected net value (use Phase 3 recommendation)
+        # Sort by expected net value
         if workflow.plan:
             # Return primary action first
             primary = workflow.plan.get("primary_action")

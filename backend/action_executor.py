@@ -202,11 +202,9 @@ class ActionExecutor:
         amount: float,
         customer_email: str,
     ) -> Dict[str, Any]:
-        """Execute payment retry (Razorpay Test Mode)."""
+        """Execute payment retry (Test Mode)."""
         
-        # In Phase 4, we're integrating with Razorpay Test Mode
-        # This would call Razorpay's test API to create a payment
-        # For now, we simulate
+        # Simulates payment retry execution
         logger.info(f"Payment retry execution {execution_id} for {opportunity_id}: ₹{amount}")
         
         return self._simulate_execution(execution_id, "PAYMENT_RETRY", opportunity_id, amount)

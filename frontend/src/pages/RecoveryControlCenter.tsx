@@ -44,7 +44,7 @@ export default function RecoveryControlCenter() {
           const govStatus = await api.getGovernanceDashboard()
           setGovernanceStatus(govStatus)
         } catch (err) {
-          console.log('Governance status unavailable')
+          // Governance status is optional
         }
       } catch (err) {
         const message = err instanceof APIError ? err.message : 'Failed to load control center'

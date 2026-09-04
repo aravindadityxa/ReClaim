@@ -1,4 +1,4 @@
-"""Phase 3 recovery intelligence tests."""
+"""Recovery intelligence tests."""
 
 import pytest
 from datetime import datetime, timedelta
@@ -353,13 +353,13 @@ class TestRecoveryAnalytics:
 
 
 class TestPhase3Integration:
-    """Integration tests for Phase 3."""
+    """Integration tests."""
     
     def test_end_to_end_recovery_recommendation(self, sample_data, test_db):
         """Test complete flow from opportunity to recommendation."""
         opp = sample_data["opportunities"][0]
         
-        # Get risk info (Phase 2)
+        # Get risk info
         from risk_analytics import RiskAnalytics
         risk_analytics = RiskAnalytics(test_db)
         risk_info = risk_analytics.compute_opportunity_risk(opp.id)

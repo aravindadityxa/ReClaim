@@ -76,7 +76,13 @@ export default function SystemHealth() {
     }
   }
 
-  const ServiceCard = ({ name, status: svcStatus, message, details, icon: Icon }: any) => {
+  const ServiceCard = ({ name, status: svcStatus, message, details, icon: Icon }: { 
+    name: string; 
+    status: 'healthy' | 'degraded' | 'unhealthy'; 
+    message: string; 
+    details?: Record<string, unknown>; 
+    icon: React.ComponentType<{ size: number; style?: React.CSSProperties }> 
+  }) => {
     const bgColor = svcStatus === 'healthy' ? 'rgba(53, 208, 127, 0.08)' :
                     svcStatus === 'degraded' ? 'rgba(245, 184, 75, 0.08)' :
                     'rgba(255, 92, 108, 0.08)'
@@ -325,7 +331,7 @@ export default function SystemHealth() {
                 Revenue Recovered
               </p>
               <p className="text-3xl font-bold mt-2" style={{ color: 'var(--color-success)' }}>
-                ${(metrics.revenue.revenue_recovered / 1000000).toFixed(1)}M
+                ₹{(metrics.revenue.revenue_recovered / 1000000).toFixed(1)}M
               </p>
               <p className="text-xs mt-2" style={{ color: 'var(--color-text-secondary)' }}>
                 From {metrics.revenue.at_risk_opportunities} at-risk opportunities

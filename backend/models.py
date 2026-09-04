@@ -41,7 +41,7 @@ class TransactionStatus(str, enum.Enum):
 
 
 class RecoveryState(str, enum.Enum):
-    """Phase 4: Recovery workflow states."""
+    """Recovery workflow states."""
     DETECTED = "DETECTED"
     PLANNED = "PLANNED"
     READY = "READY"
@@ -110,7 +110,7 @@ class RevenueOpportunity(Base):
 
 
 class RecoveryAttempt(Base):
-    """Phase 4: Record of a recovery action attempt."""
+    """Record of a recovery action attempt."""
     __tablename__ = "recovery_attempts"
 
     id = Column(String, primary_key=True, index=True)
@@ -135,7 +135,7 @@ class RecoveryAttempt(Base):
 
 
 class RecoveryExecution(Base):
-    """Phase 4: Track recovery workflow execution."""
+    """Track recovery workflow execution."""
     __tablename__ = "recovery_executions"
 
     id = Column(String, primary_key=True, index=True)
@@ -154,10 +154,10 @@ class RecoveryExecution(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-# Phase 6: Recovery Outcome Tracking & Measurement
+# Recovery Outcome Tracking & Measurement
 
 class RecoveryOutcome(Base):
-    """Phase 6: Track recovery outcome for learning and optimization."""
+    """Track recovery outcome for learning and optimization."""
     __tablename__ = "recovery_outcomes"
 
     id = Column(String, primary_key=True, index=True)
@@ -201,7 +201,7 @@ class RecoveryOutcome(Base):
 
 
 class ApprovalRequestStatus(str, enum.Enum):
-    """Phase 5: Status of an approval request."""
+    """Status of an approval request."""
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -209,7 +209,7 @@ class ApprovalRequestStatus(str, enum.Enum):
 
 
 class ApprovalRequestModel(Base):
-    """Phase 5: Approval request tracking."""
+    """Approval request tracking."""
     __tablename__ = "approval_requests"
 
     id = Column(String, primary_key=True, index=True)
@@ -233,14 +233,14 @@ class ApprovalRequestModel(Base):
 
 
 class PolicyChangeStatus(str, enum.Enum):
-    """Phase 5: Type of policy change."""
+    """Type of policy change."""
     CREATED = "CREATED"
     UPDATED = "UPDATED"
     DELETED = "DELETED"
 
 
 class PolicyChangeLog(Base):
-    """Phase 5: Audit trail of policy changes."""
+    """Audit trail of policy changes."""
     __tablename__ = "policy_change_logs"
 
     id = Column(String, primary_key=True, index=True)

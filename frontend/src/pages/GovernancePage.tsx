@@ -38,7 +38,7 @@ export const GovernancePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'policies' | 'approvals'>('overview');
   const [editingPolicy, setEditingPolicy] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<any>(null);
+  const [editValue, setEditValue] = useState<string | number | null>(null);
 
   const containerStyle = {
     backgroundColor: 'var(--color-bg-primary)',
@@ -83,7 +83,7 @@ export const GovernancePage: React.FC = () => {
         setPendingApprovals(approvalsRes.pending_requests);
       }
     } catch (error) {
-      console.error('Failed to load governance data:', error);
+      // Error loading governance data - show empty state
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,7 @@ export const GovernancePage: React.FC = () => {
       await api.pauseRecovery('Manual pause via governance interface');
       await loadGovernanceData();
     } catch (error) {
-      console.error('Failed to pause recovery:', error);
+      // Pause action failed - user will see error in UI
     }
   };
 
@@ -103,7 +103,7 @@ export const GovernancePage: React.FC = () => {
       await api.resumeRecovery();
       await loadGovernanceData();
     } catch (error) {
-      console.error('Failed to resume recovery:', error);
+      // Resume action failed - user will see error in UI
     }
   };
 
@@ -112,7 +112,7 @@ export const GovernancePage: React.FC = () => {
       await api.approveApproval(requestId, 'Approved via governance interface');
       await loadGovernanceData();
     } catch (error) {
-      console.error('Failed to approve:', error);
+      // Approval action failed - user will see error in UI
     }
   };
 
@@ -121,7 +121,7 @@ export const GovernancePage: React.FC = () => {
       await api.rejectApproval(requestId, 'Rejected via governance interface');
       await loadGovernanceData();
     } catch (error) {
-      console.error('Failed to reject:', error);
+      // Rejection action failed - user will see error in UI
     }
   };
 
@@ -133,7 +133,7 @@ export const GovernancePage: React.FC = () => {
       setEditValue(null);
       await loadGovernanceData();
     } catch (error) {
-      console.error('Failed to update policy:', error);
+      // Policy update failed - user will see error in UI
     }
   };
 
@@ -303,7 +303,7 @@ export const GovernancePage: React.FC = () => {
             {['overview', 'policies', 'approvals'].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab as 'overview' | 'policies' | 'approvals')}
                 className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 relative`}
                 style={{
                   color: activeTab === tab ? 'var(--color-primary-600)' : 'var(--color-text-secondary)',

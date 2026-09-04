@@ -1,4 +1,4 @@
-"""Tests for Phase 5 Governance & Safety Engine."""
+"""Governance and safety tests."""
 
 import pytest
 from datetime import datetime, timedelta

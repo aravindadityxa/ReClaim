@@ -39,7 +39,7 @@ interface CohortPerformance {
   average_recovered: number;
   best_strategy?: string;
   best_strategy_rate?: number;
-  strategy_breakdown?: Record<string, any>;
+  strategy_breakdown?: Record<string, number>;
 }
 
 interface IncrementalRevenue {
@@ -95,7 +95,7 @@ export const RecoveryAnalyticsPage: React.FC = () => {
       setIncremental(incrementalRes as typeof incremental);
       setRecommendations(Array.isArray(recommendationsRes) ? recommendationsRes : []);
     } catch (error) {
-      console.error('Failed to load analytics:', error);
+      // Error loading analytics - graceful fallback with empty state
     } finally {
       setLoading(false);
     }
@@ -604,7 +604,7 @@ export const RecoveryAnalyticsPage: React.FC = () => {
           {['funnel', 'strategies', 'cohorts', 'incremental'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab as any)}
+              onClick={() => setActiveTab(tab as 'analytics' | 'recommendations' | 'performance')}
               className="px-1 py-3 font-semibold text-sm transition-all relative whitespace-nowrap"
               style={{
                 color: activeTab === tab ? 'var(--color-primary-600)' : 'var(--color-text-secondary)',

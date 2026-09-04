@@ -141,12 +141,12 @@ def startup():
                 db,
                 username="admin",
                 email="admin@reclaim.local",
-                password="Admin@123456",  # Should be changed in production
+                password="Admin@123456",  # Demo credential - change immediately in production
                 full_name="System Administrator",
                 role=UserRole.ADMIN,
             )
     except Exception as e:
-        print(f"Error creating default admin user: {e}")
+        logger.error(f"Error creating default admin user: {e}")
     finally:
         db.close()
 
@@ -752,8 +752,7 @@ def get_revenue_activity(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# Phase 2: Risk Intelligence APIs
+# Risk Intelligence APIs
 
 @app.get("/api/risk/summary", response_model=RiskSummary)
 def get_risk_summary(risk_analytics = Depends(get_risk_analytics)):
@@ -860,7 +859,7 @@ def get_model_performance(risk_analytics = Depends(get_risk_analytics)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Phase 3: Recovery Intelligence APIs
+# Recovery Intelligence APIs
 
 @app.get("/api/recovery/recommendation/{opportunity_id}", response_model=RecoveryRecommendationSchema)
 def get_recovery_recommendation(opportunity_id: str, db: Session = Depends(get_db)):
@@ -881,7 +880,7 @@ def get_recovery_recommendation(opportunity_id: str, db: Session = Depends(get_d
         if not opp:
             raise HTTPException(status_code=404, detail="Opportunity not found")
         
-        # Get risk intelligence from Phase 2
+        # Get risk intelligence
         risk_analytics = RiskAnalytics(db)
         risk_info = risk_analytics.compute_opportunity_risk(opportunity_id)
         
@@ -989,7 +988,7 @@ def get_recovery_queue(limit: int = Query(20, ge=1, le=100), recovery_analytics 
 
 
 # ============================================================================
-# Phase 3b: AI Explanation Layer (Ollama LLM)
+# AI Explanation Layer (Ollama LLM)
 # ============================================================================
 
 @app.get("/api/recovery/explanation/{opportunity_id}")
@@ -1175,8 +1174,7 @@ def get_ollama_status():
             "reason": str(e)
         }
 
-
-# Phase 4: Agentic Recovery Engine Endpoints
+# Recovery Engine Endpoints
 
 @app.post("/api/recovery/workflows/{opportunity_id}")
 def create_recovery_workflow(
@@ -1383,7 +1381,7 @@ def get_recovery_control_center(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Phase 5: Governance & Safety
+# Governance & Safety
 
 @app.get("/api/governance/policies")
 def get_policies():
@@ -1586,7 +1584,7 @@ def get_governance_dashboard(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Phase 6: Recovery Measurement & Optimization
+# Recovery Measurement & Analytics
 
 @app.get("/api/analytics/recovery/funnel")
 def get_recovery_funnel(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db)):

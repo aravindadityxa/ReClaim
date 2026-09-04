@@ -14,9 +14,18 @@ from database import SessionLocal
 from sqlalchemy.orm import Session
 import json
 import uuid
+import sys
 
 # Configuration from environment
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-super-secret-key-change-in-production")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    print("ERROR: JWT_SECRET_KEY environment variable is required for secure authentication")
+    sys.exit(1)
+
+if len(JWT_SECRET_KEY) < 32:
+    print("ERROR: JWT_SECRET_KEY must be at least 32 characters long")
+    sys.exit(1)
+
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
 ACCESS_TOKEN_EXPIRES_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRES_MINUTES", "1440"))

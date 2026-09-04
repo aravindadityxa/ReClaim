@@ -222,6 +222,6 @@ class RiskFeatureEngine:
             "customer_recovered_opps": "Recovered opportunities for customer",
             "customer_lost_opps": "Lost opportunities for customer",
             "customer_recovery_rate": "Historical recovery rate for customer",
-            "is_recoverable_classification": "Phase 1 classified as HIGH recoverability",
-            "is_medium_recov": "Phase 1 classified as MEDIUM recoverability",
+            "is_recoverable_classification": "Recoverability classification (HIGH)",
+            "is_medium_recov": "Recoverability classification (MEDIUM)",
         }

@@ -1,4 +1,4 @@
-"""Phase 6: Recovery outcome measurement and learning."""
+"""Recovery outcome measurement and learning."""
 
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta

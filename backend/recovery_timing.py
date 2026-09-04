@@ -221,7 +221,7 @@ class TimingEngine:
             recommended_time_window_start=time_window[0],
             recommended_time_window_end=time_window[1],
             urgency_level="LOW",
-            rationale=f"Delayed retry #{previous_attempts + 1}. Provides customer time, may resolve temporary payment method issues."
+            rationale=f"Delayed retry #{previous_attempts + 1}. Allows customer time to resolve temporary issues."
         )
     
     def _timing_default(
@@ -256,7 +256,7 @@ class TimingEngine:
         For now, use a reasonable default.
         """
         # TODO: Could use opportunity.transaction.created_at to infer customer timezone
-        # For now, use a reasonable business hours window
+        # Business hours window
         
         return ("14:00", "16:00")  # Mid-afternoon (reasonably broad window)
     
@@ -271,7 +271,7 @@ class TimingEngine:
         
         Args:
             opportunity_age_days: Days since opportunity creation
-            risk_score: Risk score from Phase 2 (0-100)
+            risk_score: Risk score (0-100)
             recoverability_score: Recoverability score (0-100)
             
         Returns:

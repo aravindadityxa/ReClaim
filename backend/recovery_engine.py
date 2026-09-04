@@ -117,7 +117,7 @@ class RecoveryRecommendationEngine:
         
         Args:
             opportunity: RevenueOpportunity object
-            risk_info: Risk intelligence from Phase 2
+            risk_info: Risk intelligence
             customer_history: Customer history metrics
             
         Returns:

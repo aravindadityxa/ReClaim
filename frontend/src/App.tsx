@@ -107,7 +107,7 @@ export default function App() {
       // Redirect to login after logout
       window.location.href = '/'
     } catch (err) {
-      console.error('Logout failed:', err)
+      // Logout failed - user will remain logged in
     }
   }
 

@@ -56,7 +56,7 @@ export default function RecoveryIntelligence() {
         const queueData = await api.getRecoveryQueue()
         setQueue(queueData)
       } catch (queueErr) {
-        console.warn('Recovery queue failed to load, skipping', queueErr)
+        // Recovery queue is optional, continue without it
       }
     } catch (err) {
       const message = err instanceof APIError ? err.message : 'Failed to load recovery intelligence'

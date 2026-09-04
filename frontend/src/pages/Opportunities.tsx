@@ -418,9 +418,9 @@ function OpportunityDetailModal({
   opportunityId: string
   onClose: () => void
 }) {
-  const [detail, setDetail] = useState<any>(null)
-  const [recovery, setRecovery] = useState<any>(null)
-  const [recoveryActions, setRecoveryActions] = useState<any>(null)
+  const [detail, setDetail] = useState<Record<string, unknown> | null>(null)
+  const [recovery, setRecovery] = useState<Record<string, unknown> | null>(null)
+  const [recoveryActions, setRecoveryActions] = useState<Record<string, unknown>[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingRecovery, setLoadingRecovery] = useState(true)
   const [error, setError] = useState<string | null>(null)

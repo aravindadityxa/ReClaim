@@ -89,7 +89,7 @@ export interface ActivityEvent {
   description: string
 }
 
-// Phase 2: Risk Intelligence
+// Risk Intelligence
 
 export interface RiskOpportunityInfo {
   opportunity_id: string
@@ -172,7 +172,7 @@ export interface ModelPerformance {
   }
 }
 
-// Phase 3: Recovery Intelligence
+// Recovery Intelligence
 
 export interface NextBestTime {
   recommended_date: string
@@ -240,7 +240,7 @@ export interface RecoveryPortfolioMetrics {
   recovery_potential_by_type: Record<string, number>
 }
 
-// Phase 5: Governance & Safety
+// Governance & Safety
 
 export interface GovernancePolicy {
   policy_type: string
@@ -450,7 +450,7 @@ export interface AuthContextType {
   error: string | null
 }
 
-// Phase 3b: AI Explanation Layer (Ollama LLM)
+// AI Explanation Layer (Ollama LLM)
 
 export interface OllamaExplanationResponse {
   opportunity_id: string

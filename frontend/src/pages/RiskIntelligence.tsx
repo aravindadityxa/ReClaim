@@ -61,7 +61,7 @@ export default function RiskIntelligence() {
         const trendData = await api.risk.getTrend(30)
         setTrend(trendData)
       } catch (trendErr) {
-        console.warn('Trend data failed to load, skipping', trendErr)
+        // Trend is optional, continue without it
       }
     } catch (err) {
       if (err instanceof APIError) {

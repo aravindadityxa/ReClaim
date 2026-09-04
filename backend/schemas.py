@@ -92,7 +92,7 @@ class DashboardTrend(BaseModel):
     risk_trend: str
 
 
-# Phase 2: Risk Intelligence
+# Risk Intelligence
 
 class RiskOpportunityInfo(BaseModel):
     opportunity_id: str
@@ -170,7 +170,7 @@ class ModelPerformance(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
 
-# Phase 3: Recovery Intelligence
+# Recovery Intelligence
 
 class NextBestTimeSchema(BaseModel):
     """Recommended timing for recovery action."""
@@ -321,7 +321,7 @@ class RecoveryDashboardMetricsSchema(BaseModel):
         from_attributes = True
 
 
-# Phase 5: Governance & Safety
+# Governance & Safety
 
 class PolicySchema(BaseModel):
     """A single governance policy."""

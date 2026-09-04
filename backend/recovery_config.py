@@ -1,4 +1,4 @@
-"""Phase 4: Recovery engine configuration and safety bounds."""
+"""Recovery engine configuration and safety bounds."""
 
 import os
 from dataclasses import dataclass
@@ -29,7 +29,7 @@ class RecoveryBounds:
 @dataclass
 class RazorpayConfig:
     """Razorpay API configuration."""
-    mode: str  # "test" or "production" - only "test" allowed in Phase 4
+    mode: str  # "test" or "production" - only "test" mode supported
     key_id: str
     key_secret: str
     base_url: str
@@ -41,9 +41,9 @@ class RazorpayConfig:
         key_id = os.getenv("RAZORPAY_KEY_ID", "").strip()
         key_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
         
-        # Only test mode is allowed
+        # Only test mode is supported
         if mode and mode not in ["test"]:
-            raise ValueError(f"Invalid RAZORPAY_MODE: {mode}. Only 'test' is allowed in Phase 4.")
+            raise ValueError(f"Invalid RAZORPAY_MODE: {mode}. Only 'test' mode is supported.")
         
         return RazorpayConfig(
             mode=mode or "test",
@@ -57,9 +57,9 @@ class RazorpayConfig:
         return bool(self.key_id and self.key_secret)
     
     def validate_test_mode(self) -> None:
-        """Ensure we're in test mode."""
+        """Ensure test mode is active."""
         if self.mode != "test":
-            raise ValueError(f"Phase 4 only supports TEST mode. Current mode: {self.mode}")
+            raise ValueError(f"Only test mode is supported. Current mode: {self.mode}")
 
 
 # Global bounds instance

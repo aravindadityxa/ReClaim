@@ -1,4 +1,4 @@
-"""Phase 2 risk intelligence tests."""
+"""Risk intelligence tests."""
 
 import pytest
 from datetime import datetime, timedelta

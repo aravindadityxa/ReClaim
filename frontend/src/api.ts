@@ -155,7 +155,7 @@ export const api = {
   getRecoveryQueue: (limit: number = 20) =>
     fetchJSON<RecoveryOpportunitySummary[]>(`/recovery/queue?limit=${limit}`),
 
-  // Phase 4: Agentic Recovery Engine
+  // Recovery workflows
   createRecoveryWorkflow: (opportunityId: string): Promise<any> =>
     fetchJSON('/recovery/workflows/' + opportunityId, { method: 'POST' }),
 
@@ -177,14 +177,14 @@ export const api = {
   getRecoveryControlCenter: (): Promise<any> =>
     fetchJSON('/recovery/control-center'),
 
-  // Phase 3b: AI Explanation Layer (Ollama)
+  // AI Explanation
   getRecoveryExplanation: (opportunityId: string): Promise<OllamaExplanationResponse> =>
     fetchJSON<OllamaExplanationResponse>(`/recovery/explanation/${opportunityId}`),
 
   getRiskExplanation: (opportunityId: string): Promise<OllamaExplanationResponse> =>
     fetchJSON<OllamaExplanationResponse>(`/risk/explanation/${opportunityId}`),
 
-  // Phase 5: Governance & Safety
+  // Governance & Safety
   getGovernancePolicies: () =>
     fetchJSON<GovernancePoliciesResponse>('/governance/policies'),
 
@@ -230,7 +230,7 @@ export const api = {
   getGovernanceDashboard: () =>
     fetchJSON<GovernanceStatus>('/governance/dashboard'),
 
-  // Phase 6: Recovery Analytics & Optimization
+  // Recovery Analytics
   getRecoveryFunnel: (days: number = 30): Promise<any> =>
     fetchJSON(`/analytics/recovery/funnel?days=${days}`),
 

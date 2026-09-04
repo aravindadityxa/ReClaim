@@ -35,17 +35,24 @@ class RecoveryAnalytics:
         Returns:
             RecoveryPortfolioMetrics with portfolio-level insights
         """
-        # Get all at-risk opportunities
-        at_risk_opps = self.db.query(RevenueOpportunity).filter(
+        # Get all at-risk opportunities with eager loading
+        from sqlalchemy.orm import joinedload
+        at_risk_opps = self.db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.customer),
+            joinedload(RevenueOpportunity.transaction)
+        ).filter(
             RevenueOpportunity.status.in_([OpportunityStatus.AT_RISK, OpportunityStatus.RECOVERABLE])
         ).all()
         
         if not at_risk_opps:
             return self._empty_portfolio_metrics()
         
-        # Pre-fetch all customer histories in one query instead of per opportunity (N+1 optimization)
-        customer_ids = set(opp.customer_id for opp in at_risk_opps)
-        all_customer_opps = self.db.query(RevenueOpportunity).filter(
+        # Pre-fetch all customer opportunities with eager loading
+        from sqlalchemy.orm import joinedload
+        all_customer_opps = self.db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.customer),
+            joinedload(RevenueOpportunity.transaction)
+        ).filter(
             RevenueOpportunity.customer_id.in_(list(customer_ids))
         ).all() if customer_ids else []
         
