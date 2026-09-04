@@ -81,21 +81,21 @@ export default function RecoveryControlCenter() {
   const getStateColor = (state: string) => {
     switch (state) {
       case 'DETECTED':
-        return '#3b82f6'
+        return 'var(--color-info)'
       case 'PLANNED':
       case 'READY':
-        return '#f59e0b'
+        return 'var(--color-warning)'
       case 'EXECUTING':
-        return '#f97316'
+        return 'var(--color-accent)'
       case 'SUCCEEDED':
       case 'RECOVERED':
-        return '#22c55e'
+        return 'var(--color-success)'
       case 'FAILED':
-        return '#ef4444'
+        return 'var(--color-danger)'
       case 'STOPPED':
-        return '#6b7280'
+        return 'var(--color-text-muted)'
       default:
-        return '#9ca3af'
+        return 'var(--color-text-disabled)'
     }
   }
 
@@ -108,28 +108,28 @@ export default function RecoveryControlCenter() {
       label: 'Active Workflows',
       value: data.active_workflows,
       icon: Activity,
-      color: '#3b82f6',
+      color: 'var(--color-info)',
       delay: 0,
     },
     {
       label: 'Completed',
       value: data.completed_workflows,
       icon: CheckCircle,
-      color: '#22c55e',
+      color: 'var(--color-success)',
       delay: 100,
     },
     {
       label: 'Total Attempts',
       value: data.total_attempts,
       icon: Zap,
-      color: '#f59e0b',
+      color: 'var(--color-warning)',
       delay: 200,
     },
     {
       label: 'Recent Actions',
       value: data.recent_attempts_count,
       icon: Clock,
-      color: '#8b5cf6',
+      color: 'var(--color-accent)',
       delay: 300,
     },
   ]

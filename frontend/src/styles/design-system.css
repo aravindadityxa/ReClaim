@@ -40,29 +40,50 @@
   --color-success: #35D07F;
   --color-success-text: #72E3A5;
   --color-success-bg: rgba(53, 208, 127, 0.10);
+  --color-success-light: rgba(53, 208, 127, 0.08);
   --color-success-border: rgba(53, 208, 127, 0.25);
   --color-success-glow: rgba(53, 208, 127, 0.14);
+  --color-success-dark: #25A364;
   
   /* SEMANTIC: WARNING */
   --color-warning: #F5B84B;
   --color-warning-text: #FFD27A;
   --color-warning-bg: rgba(245, 184, 75, 0.10);
+  --color-warning-light: rgba(245, 184, 75, 0.08);
   --color-warning-border: rgba(245, 184, 75, 0.25);
   --color-warning-glow: rgba(245, 184, 75, 0.14);
+  --color-warning-dark: #C98D2A;
   
-  /* SEMANTIC: DANGER */
+  /* SEMANTIC: DANGER / ERROR */
   --color-danger: #FF5C6C;
+  --color-error: #FF5C6C;
   --color-danger-text: #FF8D99;
   --color-danger-bg: rgba(255, 92, 108, 0.10);
+  --color-danger-light: rgba(255, 92, 108, 0.08);
+  --color-error-light: rgba(255, 92, 108, 0.08);
   --color-danger-border: rgba(255, 92, 108, 0.25);
   --color-danger-glow: rgba(255, 92, 108, 0.14);
+  --color-error-dark: #D63946;
   
   /* SEMANTIC: INFO */
   --color-info: #58B8FF;
   --color-info-text: #83CCFF;
   --color-info-bg: rgba(88, 184, 255, 0.10);
+  --color-info-light: rgba(88, 184, 255, 0.08);
   --color-info-border: rgba(88, 184, 255, 0.25);
   --color-info-glow: rgba(88, 184, 255, 0.14);
+  --color-info-dark: #2E7FB8;
+
+  /* PRIMARY ACCENT LIGHT VARIANTS */
+  --color-primary-light: rgba(124, 140, 255, 0.08);
+  --color-primary-100: rgba(124, 140, 255, 0.06);
+  --color-primary-500: #8B7CFF;
+  --color-primary-600: #7C6FE0;
+  --color-primary-800: #5A51B8;
+  
+  /* NEUTRAL VARIANTS */
+  --color-neutral-100: rgba(100, 116, 139, 0.08);
+  --color-neutral-800: #3F4A5A;
   
   /* LEGACY: Light theme (for fallback, rarely used) */
   --color-light-bg-primary: #ffffff;

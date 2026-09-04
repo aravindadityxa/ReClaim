@@ -247,16 +247,13 @@ class SystemHealthCheck:
         }
 
 
-# Global health checker instance
-health_checker: Optional[SystemHealthCheck] = None
-
-
-def initialize_health_checker(db) -> None:
-    """Initialize the global health checker."""
-    global health_checker
-    health_checker = SystemHealthCheck(db)
-
-
-def get_health_checker() -> Optional[SystemHealthCheck]:
-    """Get the global health checker."""
-    return health_checker
+def get_health_checker(db) -> SystemHealthCheck:
+    """
+    Get a fresh health checker instance for this request.
+    
+    Each request gets its own instance to ensure:
+    - Fresh database session for health checks
+    - No concurrent session sharing
+    - Proper cleanup after request completes
+    """
+    return SystemHealthCheck(db)

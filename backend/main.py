@@ -34,10 +34,6 @@ app = FastAPI(title="ReClaim Revenue Command Center")
 # Thread pool for parallelizing independent database queries
 _query_executor = ThreadPoolExecutor(max_workers=4)
 
-# Global cache for expensive instances to avoid reinitializing on every request
-_risk_analytics_cache = {}
-_recovery_analytics_cache = {}
-
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -66,39 +62,30 @@ async def clear_analytics_cache(request: Request, call_next):
 # ============================================================================
 
 def get_risk_analytics(db: Session = Depends(get_db)):
-    """Get cached RiskAnalytics instance for this request.
+    """Get RiskAnalytics instance for this request.
     
-    Reuses the same RiskAnalytics instance within a request to avoid:
-    - Redundant ML model loading from disk
-    - Redundant feature engineering
-    - Redundant database queries for the same opportunity set
+    Creates a fresh instance for each request to ensure:
+    - Each request has its own isolated database session
+    - No concurrent session sharing between requests
+    - Proper session lifecycle management
+    
+    Note: ML model loading is handled by RiskAnalytics._ensure_model_trained()
+    which caches the trained model, not the database session.
     """
-    if 'instance' not in _risk_analytics_cache:
-        from risk_analytics import RiskAnalytics
-        _risk_analytics_cache['instance'] = RiskAnalytics(db)
-    else:
-        # Update db session for this request
-        analytics = _risk_analytics_cache['instance']
-        analytics.db = db
-    return _risk_analytics_cache['instance']
+    from risk_analytics import RiskAnalytics
+    return RiskAnalytics(db)
 
 
 def get_recovery_analytics(db: Session = Depends(get_db)):
-    """Get cached RecoveryAnalytics instance for this request.
+    """Get RecoveryAnalytics instance for this request.
     
-    Reuses the same RecoveryAnalytics instance within a request to avoid:
-    - Redundant strategy initialization
-    - Redundant recovery calculations
-    - Redundant database queries
+    Creates a fresh instance for each request to ensure:
+    - Each request has its own isolated database session
+    - No concurrent session sharing between requests
+    - Proper session lifecycle management
     """
-    if 'instance' not in _recovery_analytics_cache:
-        from recovery_analytics import RecoveryAnalytics
-        _recovery_analytics_cache['instance'] = RecoveryAnalytics(db)
-    else:
-        # Update db session for this request
-        analytics = _recovery_analytics_cache['instance']
-        analytics.db = db
-    return _recovery_analytics_cache['instance']
+    from recovery_analytics import RecoveryAnalytics
+    return RecoveryAnalytics(db)
 
 
 # ============================================================================
@@ -1614,13 +1601,10 @@ def get_strategy_recommendations(
 def get_system_health(db: Session = Depends(get_db)):
     """Get comprehensive system health status."""
     try:
-        from health_service import initialize_health_checker, get_health_checker
+        from health_service import get_health_checker
         
-        # Initialize if needed
-        if get_health_checker() is None:
-            initialize_health_checker(db)
-        
-        checker = get_health_checker()
+        # Get fresh health checker instance for this request
+        checker = get_health_checker(db)
         return checker.perform_full_check()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1679,14 +1663,11 @@ def get_system_errors(
 def get_system_status(db: Session = Depends(get_db)):
     """Get quick system status."""
     try:
-        from health_service import initialize_health_checker, get_health_checker
+        from health_service import get_health_checker
         from error_tracker import error_tracker
         
-        # Initialize health checker if needed
-        if get_health_checker() is None:
-            initialize_health_checker(db)
-        
-        health = get_health_checker().perform_full_check()
+        # Get fresh health checker instance for this request
+        health = get_health_checker(db).perform_full_check()
         errors = error_tracker.get_summary()
         
         return {
