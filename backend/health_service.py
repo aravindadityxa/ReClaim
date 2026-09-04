@@ -257,3 +257,12 @@ def get_health_checker(db) -> SystemHealthCheck:
     - Proper cleanup after request completes
     """
     return SystemHealthCheck(db)
+
+
+def initialize_health_checker(db) -> SystemHealthCheck:
+    """
+    Alias for get_health_checker - provided for backward compatibility.
+    
+    Use get_health_checker() instead.
+    """
+    return get_health_checker(db)
