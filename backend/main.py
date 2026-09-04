@@ -731,7 +731,7 @@ def get_revenue_activity(
                 "opportunity_type": opp.type.value,
                 "status": opp.status.value,
                 "timestamp": opp.created_at.isoformat(),
-                "description": f"{opp.type.value}: ${opp.amount} - {opp.status.value}"
+                "description": f"{opp.type.value}: ₹{opp.amount} - {opp.status.value}"
             })
             
             if opp.recovered_at:
@@ -742,7 +742,7 @@ def get_revenue_activity(
                     "customer_id": opp.customer_id,
                     "amount": opp.amount,
                     "timestamp": opp.recovered_at.isoformat(),
-                    "description": f"Recovered: ${opp.amount}"
+                    "description": f"Recovered: ₹{opp.amount}"
                 })
         
         # Sort by timestamp

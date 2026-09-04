@@ -7,6 +7,7 @@ import {
 import { api } from '../api';
 import { CinematicBackground } from '../components/CinematicBackground';
 import { ScrollTriggerAnimation } from '../components/ScrollTriggerAnimation';
+import { formatINR } from '../utils/currency';
 
 interface FunnelMetric {
   at_risk: { count: number; amount: number };
@@ -101,11 +102,7 @@ export const RecoveryAnalyticsPage: React.FC = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return formatINR(value);
   };
 
   const renderFunnelTab = () => (
