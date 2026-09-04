@@ -525,15 +525,64 @@ def activate_user(
 def get_revenue_summary(db: Session = Depends(get_db)):
     """Get dashboard revenue summary metrics. Queries run in parallel."""
     try:
-        # Run independent queries in parallel
+        # Run independent queries in parallel with independent sessions
+        def get_total_revenue_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_total_revenue(db_task)
+            finally:
+                db_task.close()
+        
+        def get_revenue_at_risk_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_revenue_at_risk(db_task)
+            finally:
+                db_task.close()
+        
+        def get_estimated_recoverable_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_estimated_recoverable(db_task)
+            finally:
+                db_task.close()
+        
+        def get_recovered_revenue_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_recovered_revenue(db_task)
+            finally:
+                db_task.close()
+        
+        def get_opportunity_count_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_opportunity_count(db_task)
+            finally:
+                db_task.close()
+        
+        def get_revenue_health_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_revenue_health(db_task)
+            finally:
+                db_task.close()
+        
+        def get_payment_success_rate_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_payment_success_rate(db_task)
+            finally:
+                db_task.close()
+        
         futures = {
-            'total': _query_executor.submit(RevenueAnalytics.get_total_revenue, db),
-            'at_risk': _query_executor.submit(RevenueAnalytics.get_revenue_at_risk, db),
-            'recoverable': _query_executor.submit(RevenueAnalytics.get_estimated_recoverable, db),
-            'recovered': _query_executor.submit(RevenueAnalytics.get_recovered_revenue, db),
-            'counts': _query_executor.submit(RevenueAnalytics.get_opportunity_count, db),
-            'health': _query_executor.submit(RevenueAnalytics.get_revenue_health, db),
-            'success_rate': _query_executor.submit(RevenueAnalytics.get_payment_success_rate, db),
+            'total': _query_executor.submit(get_total_revenue_task),
+            'at_risk': _query_executor.submit(get_revenue_at_risk_task),
+            'recoverable': _query_executor.submit(get_estimated_recoverable_task),
+            'recovered': _query_executor.submit(get_recovered_revenue_task),
+            'counts': _query_executor.submit(get_opportunity_count_task),
+            'health': _query_executor.submit(get_revenue_health_task),
+            'success_rate': _query_executor.submit(get_payment_success_rate_task),
         }
         
         # Collect results
@@ -556,11 +605,32 @@ def get_revenue_summary(db: Session = Depends(get_db)):
 def get_revenue_trend(days: int = Query(30, ge=7, le=365), db: Session = Depends(get_db)):
     """Get revenue trend for dashboard. Queries run in parallel."""
     try:
-        # Run independent queries in parallel
+        # Run independent queries in parallel with independent sessions
+        def get_revenue_trend_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_revenue_trend(db_task, days)
+            finally:
+                db_task.close()
+        
+        def get_risk_breakdown_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_risk_breakdown(db_task)
+            finally:
+                db_task.close()
+        
+        def get_risk_trend_task():
+            db_task = SessionLocal()
+            try:
+                return RevenueAnalytics.get_risk_trend(db_task, days)
+            finally:
+                db_task.close()
+        
         futures = {
-            'trend': _query_executor.submit(RevenueAnalytics.get_revenue_trend, db, days),
-            'risk_breakdown': _query_executor.submit(RevenueAnalytics.get_risk_breakdown, db),
-            'risk_trend': _query_executor.submit(RevenueAnalytics.get_risk_trend, db, days),
+            'trend': _query_executor.submit(get_revenue_trend_task),
+            'risk_breakdown': _query_executor.submit(get_risk_breakdown_task),
+            'risk_trend': _query_executor.submit(get_risk_trend_task),
         }
         
         # Collect results
@@ -620,7 +690,11 @@ def get_revenue_opportunities(
 def get_opportunity_detail(opportunity_id: str, db: Session = Depends(get_db)):
     """Get detailed information about a specific revenue opportunity."""
     try:
-        opp = db.query(RevenueOpportunity).filter(
+        from sqlalchemy.orm import joinedload
+        opp = db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.transaction),
+            joinedload(RevenueOpportunity.customer)
+        ).filter(
             RevenueOpportunity.id == opportunity_id
         ).first()
         
@@ -794,9 +868,13 @@ def get_recovery_recommendation(opportunity_id: str, db: Session = Depends(get_d
     try:
         from risk_analytics import RiskAnalytics
         from recovery_engine import RecoveryRecommendationEngine
+        from sqlalchemy.orm import joinedload
         
-        # Get opportunity
-        opp = db.query(RevenueOpportunity).filter(
+        # Get opportunity with eager loading
+        opp = db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.customer),
+            joinedload(RevenueOpportunity.transaction)
+        ).filter(
             RevenueOpportunity.id == opportunity_id
         ).first()
         
@@ -836,9 +914,13 @@ def get_recovery_action_comparison(opportunity_id: str, db: Session = Depends(ge
     try:
         from risk_analytics import RiskAnalytics
         from recovery_engine import RecoveryRecommendationEngine
+        from sqlalchemy.orm import joinedload
         
-        # Get opportunity
-        opp = db.query(RevenueOpportunity).filter(
+        # Get opportunity with eager loading
+        opp = db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.customer),
+            joinedload(RevenueOpportunity.transaction)
+        ).filter(
             RevenueOpportunity.id == opportunity_id
         ).first()
         
@@ -924,8 +1006,12 @@ def get_recovery_explanation(opportunity_id: str, db: Session = Depends(get_db))
     from risk_analytics import RiskAnalytics
     
     try:
-        # Get opportunity
-        opportunity = db.query(RevenueOpportunity).filter(
+        # Get opportunity with eager loading
+        from sqlalchemy.orm import joinedload
+        opportunity = db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.customer),
+            joinedload(RevenueOpportunity.transaction)
+        ).filter(
             RevenueOpportunity.id == opportunity_id
         ).first()
         if not opportunity:

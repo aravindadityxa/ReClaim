@@ -21,7 +21,11 @@ class RiskFeatureEngine:
         
         Returns DataFrame with opportunity-level features.
         """
-        opportunities = db.query(RevenueOpportunity).all()
+        from sqlalchemy.orm import joinedload
+        opportunities = db.query(RevenueOpportunity).options(
+            joinedload(RevenueOpportunity.transaction),
+            joinedload(RevenueOpportunity.customer)
+        ).all()
         
         if not opportunities:
             return pd.DataFrame()
