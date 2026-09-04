@@ -22,6 +22,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Testing
 .pytest_cache/
 
 # Virtual environments
@@ -36,7 +38,7 @@ venv.bak/
 *.sqlite
 *.sqlite3
 
-# ML model artifacts (generated, not source code)
+# ML model artifacts
 risk_models/
 !risk_models/.gitkeep
 
@@ -51,17 +53,15 @@ risk_models/
 *.swp
 *.swo
 *~
-.DS_Store
+*.code-workspace
 
-# Node
+# Node.js
 node_modules/
 npm-debug.log
 yarn-error.log
 .pnpm-debug.log
 
-# Build outputs
-dist/
-build/
+# Frontend build outputs
 .next/
 out/
 
@@ -73,9 +73,6 @@ build_output.txt
 tsc_output.txt
 tsc_errors.txt
 
-# IDE configs
-*.code-workspace
-
-# OS
-Thumbs.db
+# Operating system
 .DS_Store
+Thumbs.db
